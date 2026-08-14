@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta
+    name="description"
+    content="An interactive 3D globe exploring global vegetation intensity and vegetation change from 2000 to 2025 using MODIS NDVI data."
+  >
+
+  <title>The Greening Earth?</title>
+
+  <link
+    href="https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.css"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css">
+
+  <script>
+    (() => {
+      const savedTheme =
+        localStorage.getItem("theme-preference") || "auto";
+
+      document.documentElement.dataset.theme = savedTheme;
+    })();
+  </script>
+</head>
+
+<body class="mode-present">
+  <!-- =====================================================
+       Splash / introduction screen
+       ===================================================== -->
+
+  <section
+    id="splash-screen"
+    class="splash-screen"
+    aria-labelledby="splash-title"
+  >
+    <div class="splash-card">
+      <p class="splash-kicker">
+        Global vegetation, 2000–2025
+      </p>
+
+      <h1 id="splash-title">
+        The Greening Earth
+      </h1>
+
+      <p>
+        Human activity has placed pressure on ecosystems around the world,
+        and many people may expect the planet to be steadily losing
+        vegetation. Surprisingly, MODIS satellite data shows that large
+        areas became greener between 2000 and 2025. But this progress is
+        uneven, and some regions still face deforestation, drought, and
+        land degradation. Explore the globe to see where vegetation is
+        recovering and where continued protection is still needed.
+      </p>
+
+      <div class="splash-explanation">
+        <div class="splash-explanation-item">
+          <strong>
+            Increased Greenery
+          </strong>
+
+          <span>
+            Many regions show increasing vegetation, demonstrating that
+            environmental recovery and restoration are possible.
+          </span>
+        </div>
+
+        <div class="splash-explanation-item">
+          <strong>
+            Progress is Regional
+          </strong>
+
+          <span>
+            Regional differences reveal where restoration is succeeding
+            and where ecosystems continue to face challenges.
+          </span>
+        </div>
+      </div>
+
+      <div
+        class="splash-legend"
+        aria-label="How to read the visualization"
+      >
+        <div
+          class="legend-chip legend-chip--intensity legend-chip--lower"
+        >
+          <span
+            class="legend-gradient-preview legend-gradient-preview--lower"
+            aria-hidden="true"
+          ></span>
+
+          <span>
+            <strong class="legend-label-lower">
+              Light colors
+            </strong>
+            = lower NDVI
+          </span>
+        </div>
+
+        <div
+          class="legend-chip legend-chip--intensity legend-chip--higher"
+        >
+          <span
+            class="legend-gradient-preview legend-gradient-preview--high"
+            aria-hidden="true"
+          ></span>
+
+          <span>
+            <strong class="legend-label-higher">
+              Dark green and blue
+            </strong>
+            = higher NDVI
+          </span>
+        </div>
+
+        <div class="legend-chip legend-chip--growth">
+          <span
+            class="legend-dot legend-dot--growth"
+            aria-hidden="true"
+          ></span>
+
+          <span>
+            Green = vegetation growth
+          </span>
+        </div>
+
+        <div class="legend-chip legend-chip--decline">
+          <span
+            class="legend-dot legend-dot--decline"
+            aria-hidden="true"
+          ></span>
+
+          <span>
+            Orange = vegetation decline
+          </span>
+        </div>
+
+        <div class="legend-chip legend-chip--height">
+          <span
+            class="legend-dot legend-dot--height"
+            aria-hidden="true"
+          ></span>
+
+          <span>
+            Taller spikes = higher vegetation density or greater change
+          </span>
+        </div>
+      </div>
+
+      <button
+        id="start-button"
+        class="start-button"
+        type="button"
+        disabled
+      >
+        Loading Map...
+      </button>
+
+      <p
+        id="loading-status"
+        class="loading-status"
+        role="status"
+        aria-live="polite"
+      >
+        Preparing the interactive globe...
+      </p>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       Top navigation and controls
+       ===================================================== -->
+
+  <header class="top-ui">
+    <div class="brand">
+      <strong>
+        The Greening Earth
+      </strong>
+
+      <button
+        id="about-button"
+        class="about-button"
+        type="button"
+      >
+        About This Project
+      </button>
+    </div>
+
+    <nav
+      class="compare-tabs"
+      aria-label="Map display mode"
+    >
+      <button
+        class="compare-tab"
+        type="button"
+        data-mode="compare"
+      >
+        Compare Years
+
+        <small>
+          Earlier year beside 2025
+        </small>
+      </button>
+
+      <button
+        class="compare-tab selected"
+        type="button"
+        data-mode="present"
+      >
+        Vegetation 2025
+
+        <small>
+          Current vegetation intensity
+        </small>
+      </button>
+
+      <button
+        class="compare-tab"
+        type="button"
+        data-mode="change"
+      >
+        Show Change
+
+        <small>
+          Growth and decline since 2000
+        </small>
+      </button>
+    </nav>
+
+    <div class="region-jump">
+      <label for="region-select">
+        Jump to
+      </label>
+
+      <select
+        id="region-select"
+        aria-label="Jump to a region"
+      >
+        <option value="global">
+          Global overview
+        </option>
+
+        <option value="amazon">
+          Amazon Basin
+        </option>
+
+        <option value="sahel">
+          Sahel / West Africa
+        </option>
+
+        <option value="china">
+          Northern China / Inner Mongolia
+        </option>
+      </select>
+
+      <div class="theme-switcher">
+        <label for="theme-select">
+          Theme
+        </label>
+
+        <select
+          id="theme-select"
+          aria-label="Select page theme"
+        >
+          <option value="auto">
+            Auto
+          </option>
+
+          <option value="light">
+            Light
+          </option>
+
+          <option value="dark">
+            Dark
+          </option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- =====================================================
+       Main visualization
+       ===================================================== -->
+
+  <main class="map-stage">
+    <div
+      id="single-map"
+      aria-label="Interactive global vegetation globe"
+    ></div>
+
+    <div
+      id="compare-view"
+      aria-label="Side-by-side vegetation comparison"
+    >
+      <div
+        id="left-map"
+        class="compare-map"
+        aria-label="Earlier vegetation year"
+      ></div>
+
+      <div
+        id="right-map"
+        class="compare-map"
+        aria-label="Vegetation in 2025"
+      ></div>
+    </div>
+
+    <div
+      class="split-line"
+      aria-hidden="true"
+    ></div>
+
+    <div
+      class="compare-switch"
+      aria-label="Choose comparison year"
+    >
+      <div class="compare-year-stack">
+        <button
+          class="compare-year-option selected"
+          type="button"
+          data-compare-year="2000"
+        >
+          2000
+        </button>
+
+        <button
+          class="compare-year-option"
+          type="button"
+          data-compare-year="2013"
+        >
+          2013
+        </button>
+      </div>
+
+      <div
+        class="compare-current-year"
+        aria-label="Current comparison year"
+      >
+        2025
+      </div>
+    </div>
+
+    <section
+      class="story-panel"
+      aria-live="polite"
+    >
+      <h2 id="story-title">
+        A Greener Global Picture
+      </h2>
+
+      <p id="story-text">
+        Many parts of the world appear greener in 2025 than they did in
+        2000. This encouraging pattern suggests that vegetation can
+        recover through natural processes, rainfall changes, improved
+        land management, and environmental restoration. However,
+        progress is uneven, so regional details remain important.
+      </p>
+    </section>
+
+    <!-- ===================================================
+         Map legend
+         =================================================== -->
+
+    <aside
+      class="map-legend"
+      aria-label="Map legend"
+    >
+      <div class="map-legend-row legend-present-only">
+        <span
+          class="map-legend-gradient"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          Lower NDVI
+        </span>
+
+        <span>
+          Higher NDVI
+        </span>
+      </div>
+
+      <div class="map-legend-row legend-present-only">
+        <span
+          class="map-legend-height-icon"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          Taller spikes = greener, denser vegetation
+        </span>
+      </div>
+
+      <div class="map-legend-row legend-change-only">
+        <span
+          class="map-legend-swatch map-legend-growth"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          Vegetation growth
+        </span>
+      </div>
+
+      <div class="map-legend-row legend-change-only">
+        <span
+          class="map-legend-swatch map-legend-decline"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          Vegetation decline
+        </span>
+      </div>
+
+      <div class="map-legend-row legend-change-only">
+        <span
+          class="map-legend-height-icon"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          Taller spikes = greater change
+        </span>
+      </div>
+    </aside>
+
+    <!-- ===================================================
+         Regional summary chart
+         =================================================== -->
+
+    <button
+      id="mobile-chart-toggle"
+      class="mobile-chart-toggle"
+      type="button"
+      aria-controls="chart-panel"
+    >
+      Summary
+    </button>
+
+    <aside
+      id="chart-panel"
+      class="chart-panel"
+      aria-label="Regional vegetation summary"
+    >
+      <div class="chart-panel-header">
+        <h3 id="chart-title">
+          Global Vegetation Growth Summary
+        </h3>
+
+        <button
+          id="chart-close-button"
+          class="chart-close-button"
+          type="button"
+          aria-label="Close regional summary"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="mini-chart-block">
+        <div class="mini-chart-label">
+          Average NDVI
+        </div>
+
+        <div
+          id="ndvi-bar-chart"
+          class="bar-chart"
+        >
+          <div class="chart-loading">
+            Loading regional data...
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-chart-block">
+        <div class="mini-chart-label">
+          Share of changed cells
+        </div>
+
+        <div
+          id="change-summary-chart"
+          class="change-chart"
+        >
+          <div class="change-box growth">
+            <strong>—</strong>
+            <span>growth cells</span>
+          </div>
+
+          <div class="change-box decline">
+            <strong>—</strong>
+            <span>decline cells</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-chart-block">
+        <div class="mini-chart-label">
+          Approximate changed area
+        </div>
+
+        <div
+          id="area-summary-chart"
+          class="area-chart"
+        >
+          <div class="area-box added">
+            <strong>—</strong>
+            <span>estimated added green-space area</span>
+          </div>
+
+          <div class="area-box lost">
+            <strong>—</strong>
+            <span>estimated lost green-space area</span>
+          </div>
+        </div>
+      </div>
+
+      <p id="chart-caption">
+        Area values are approximate and are calculated from changed
+        MODIS NDVI grid cells in the selected region.
+      </p>
+    </aside>
+  </main>
+
+  <!-- =====================================================
+       About modal
+       ===================================================== -->
+
+  <div
+    id="about-modal"
+    class="about-modal"
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="about-title"
+  >
+    <article class="about-card">
+      <button
+        id="about-close-button"
+        class="about-close-button"
+        type="button"
+        aria-label="Close project information"
+      >
+        ×
+      </button>
+
+      <p class="about-kicker">
+        About this project
+      </p>
+
+      <h2 id="about-title">
+        Mapping a Greener World
+      </h2>
+
+      <p>
+        This interactive visualization uses MODIS Normalized Difference
+        Vegetation Index data to compare vegetation patterns in 2000,
+        2013, and 2025. Many people may expect environmental pressure to
+        have caused vegetation loss almost everywhere. However, the
+        satellite record reveals a more hopeful and complex story:
+        large parts of the world have become greener.
+      </p>
+
+      <p>
+        This progress is not identical in every region. Some areas show
+        vegetation recovery, rainfall-driven growth, improved farming,
+        or the effects of large restoration programs, while other areas
+        continue to experience deforestation, drought, and land
+        degradation. Therefore, this project invites readers to explore
+        both the encouraging global trend and the regional challenges
+        that remain.
+      </p>
+
+      <h3>
+        Why this matters
+      </h3>
+
+      <p>
+        The green and orange spikes represent more than satellite pixels.
+        They reflect changing forests, farms, grasslands, habitats, water
+        resources, and communities. The visualization shows that
+        environmental improvement is possible and that restoration and
+        protection efforts can make a meaningful difference.
+      </p>
+
+      <h3>
+        How to interpret the maps
+      </h3>
+
+      <p>
+        On the vegetation maps, higher NDVI generally indicates greener,
+        denser, or healthier plant cover. On the change map, green cells
+        represent an increase in NDVI and orange cells represent a
+        decrease. Spike height represents vegetation intensity on the
+        vegetation maps and the magnitude of change on the change map.
+      </p>
+
+      <h3>
+        Data
+      </h3>
+
+      <p>
+        The project uses satellite-based NDVI data derived from NASA
+        MODIS vegetation products. The visualization is intended for
+        exploration and broad comparison rather than precise measurement
+        of forest cover or land-use change.
+      </p>
+
+      <h3>
+        Team
+      </h3>
+
+      <p>
+        Yutao Lin, Jacob Kavanal, Kang Lee, Raffi Dulgerian
+      </p>
+
+      <h3>
+        Project repository
+      </h3>
+
+      <p>
+        <a
+          href="https://github.com/yutaolin018/DSC106-Final_Project"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View the project on GitHub
+        </a>
+      </p>
+    </article>
+  </div>
+
+  <!-- =====================================================
+       Guided tour
+       ===================================================== -->
+
+  <div
+    id="tour-overlay"
+    class="tour-overlay"
+    aria-hidden="true"
+  >
+    <section
+      class="tour-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tour-title"
+    >
+      <p
+        id="tour-step-count"
+        class="tour-step-count"
+      >
+        Step 1 of 5
+      </p>
+
+      <h2 id="tour-title">
+        A planet under pressure
+      </h2>
+
+      <p id="tour-text">
+        Human activity has transformed forests, grasslands, farms, and
+        drylands around the world. Many people may expect these pressures
+        to have caused vegetation to decline almost everywhere.
+      </p>
+
+      <div class="tour-actions">
+        <button
+          id="tour-skip-button"
+          class="tour-secondary-button"
+          type="button"
+        >
+          Skip Tour
+        </button>
+
+        <button
+          id="tour-next-button"
+          class="tour-primary-button"
+          type="button"
+        >
+          Next
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- =====================================================
+       Final takeaway
+       ===================================================== -->
+
+  <div
+    id="takeaway-overlay"
+    class="takeaway-overlay"
+    aria-hidden="true"
+  >
+    <section
+      class="takeaway-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="takeaway-title"
+    >
+      <button
+        id="takeaway-close-button"
+        class="takeaway-close-button"
+        type="button"
+        aria-label="Close final takeaway"
+      >
+        ×
+      </button>
+
+      <p class="takeaway-kicker">
+        Final takeaway
+      </p>
+
+      <h2 id="takeaway-title">
+        The Earth can become greener, but it's up to us.
+      </h2>
+
+      <p class="takeaway-lead">
+        From 2000 to 2025, many parts of the world show increasing
+        vegetation. This gives us reason for optimism: natural recovery,
+        rainfall, improved land management, and restoration programs can
+        all contribute to a greener landscape.
+      </p>
+
+      <div class="takeaway-grid">
+        <article class="takeaway-point takeaway-point--and">
+          <span class="takeaway-label">
+            And
+          </span>
+
+          <h3>
+            Vegetation is increasing in many places
+          </h3>
+
+          <p>
+            The global change map reveals widespread areas of vegetation
+            growth. Regional examples such as the Sahel and Northern
+            China show that recovery and restoration can produce visible
+            results.
+          </p>
+        </article>
+
+        <article class="takeaway-point takeaway-point--but">
+          <span class="takeaway-label">
+            But
+          </span>
+
+          <h3>
+            Greening has different meanings
+          </h3>
+
+          <p>
+            The Amazon, Sahel, and Northern China each show a different
+            combination of natural recovery, human action, and continuing
+            environmental pressure. One global average cannot explain
+            every region.
+          </p>
+        </article>
+
+        <article class="takeaway-point takeaway-point--therefore">
+          <span class="takeaway-label">
+            Therefore
+          </span>
+
+          <h3>
+            Local understanding makes progress possible
+          </h3>
+
+          <p>
+            The most important lesson is not simply that the Earth is
+            greener. Environmental improvement is possible when
+            restoration and protection respond to the conditions of each
+            place.
+          </p>
+        </article>
+      </div>
+
+      <div class="takeaway-why">
+        <h3>
+          Why this visualization reveals the takeaway
+        </h3>
+
+        <p>
+          The globe first shows the surprising global pattern. The
+          comparison view lets readers examine vegetation across years,
+          while the change view separates growth from decline. Regional
+          stories and charts then explain how the same global trend can
+          have different causes and consequences in different places.
+        </p>
+
+        <p>
+          By moving from the global picture to regional evidence, the
+          visualization allows readers to discover the takeaway rather
+          than simply being told what to believe.
+        </p>
+      </div>
+
+      <div class="takeaway-actions">
+        <button
+          id="takeaway-restart-button"
+          class="takeaway-secondary-button"
+          type="button"
+        >
+          Explore the Story Again
+        </button>
+
+        <button
+          id="takeaway-continue-button"
+          class="takeaway-primary-button"
+          type="button"
+        >
+          Continue Exploring
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
