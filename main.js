@@ -176,6 +176,7 @@ let currentMode = "present";
 let activeView = "global";
 let compareBaseYear = "2000";
 let currentTourStep = 0;
+let splashStage = 0;
 
 let syncing = false;
 let isLoadingDetail = false;
@@ -430,7 +431,6 @@ async function initAllMaps() {
 
   appReady = true;
 
-  updateSplashStatus("Map ready. Click Start to explore.");
   enableStartButton();
 }
 
@@ -2126,6 +2126,9 @@ function closeTakeawayPanel() {
    Splash screen
    ========================================================= */
 
+/* Stage 0 shows the title, stage 1 adds the detail and legend,
+   stage 2 grows the decorative globe and hands off to the tour. */
+
 function updateSplashStatus(message) {
   const status =
     document.querySelector("#loading-status");
@@ -2135,7 +2138,7 @@ function updateSplashStatus(message) {
   }
 }
 
-function enableStartButton() {
+function refreshSplashCta() {
   const button =
     document.querySelector("#start-button");
 
@@ -2143,9 +2146,62 @@ function enableStartButton() {
     return;
   }
 
-  button.disabled = false;
+  if (splashStage === 0) {
+    button.disabled = false;
+
+    button.textContent =
+      "Start the tour";
+
+    if (appReady) {
+      updateSplashStatus("");
+    }
+
+    return;
+  }
+
+  button.disabled = !appReady;
+
   button.textContent =
-    "Start Exploring";
+    "Begin the tour";
+
+  updateSplashStatus(
+    appReady
+      ? "Next: reveal the globe"
+      : "Preparing the globe..."
+  );
+}
+
+function enableStartButton() {
+  refreshSplashCta();
+}
+
+function setSplashStage(stage) {
+  const splash =
+    document.querySelector("#splash-screen");
+
+  if (!splash) {
+    return;
+  }
+
+  splashStage = stage;
+  splash.dataset.stage = String(stage);
+
+  refreshSplashCta();
+}
+
+function pause(milliseconds) {
+  return new Promise(resolve => {
+    window.setTimeout(
+      resolve,
+      prefersReducedMotion() ? 0 : milliseconds
+    );
+  });
+}
+
+function prefersReducedMotion() {
+  return window
+    .matchMedia("(prefers-reduced-motion: reduce)")
+    .matches;
 }
 
 function setupSplashScreen() {
@@ -2159,23 +2215,40 @@ function setupSplashScreen() {
     return;
   }
 
-  button.disabled = true;
-  button.textContent =
-    "Loading Map...";
+  setSplashStage(0);
 
   button.addEventListener("click", () => {
-    if (!appReady) {
+    if (splashStage === 0) {
+      setSplashStage(1);
       return;
     }
 
-    splash.classList.add("hidden");
-
-    window.setTimeout(() => {
-      splash.remove();
-      resizeMaps();
-      openGuidedTour();
-    }, 600);
+    if (
+      splashStage === 1 &&
+      appReady
+    ) {
+      revealMapAndStartTour(splash);
+    }
   });
+}
+
+async function revealMapAndStartTour(splash) {
+  setSplashStage(2);
+
+  /* The decorative globe grows and sharpens first, so the real
+     one behind it lands in roughly the same place. */
+  await pause(900);
+
+  resizeMaps();
+
+  splash.classList.add("hidden");
+
+  await pause(750);
+
+  splash.remove();
+  resizeMaps();
+
+  await openGuidedTour();
 }
 
 /* =========================================================

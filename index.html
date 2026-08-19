@@ -40,138 +40,133 @@
   <section
     id="splash-screen"
     class="splash-screen"
+    data-stage="0"
     aria-labelledby="splash-title"
   >
-    <div class="splash-card">
-      <p class="splash-kicker">
-        Global vegetation, 2000–2025
-      </p>
+    <div
+      class="splash-globe"
+      aria-hidden="true"
+    >
+      <span class="splash-globe-body"></span>
+      <span class="splash-globe-sheen"></span>
+    </div>
 
-      <h1 id="splash-title">
-        The Greening Earth
-      </h1>
+    <div class="splash-content">
+      <div class="splash-hero">
+        <h1 id="splash-title">
+          A Greening
 
-      <p>
-        Human activity has placed pressure on ecosystems around the world,
-        and many people may expect the planet to be steadily losing
-        vegetation. Surprisingly, MODIS satellite data shows that large
-        areas became greener between 2000 and 2025. But this progress is
-        uneven, and some regions still face deforestation, drought, and
-        land degradation. Explore the globe to see where vegetation is
-        recovering and where continued protection is still needed.
-      </p>
-
-      <div class="splash-explanation">
-        <div class="splash-explanation-item">
-          <strong>
-            Increased Greenery
-          </strong>
-
-          <span>
-            Many regions show increasing vegetation, demonstrating that
-            environmental recovery and restoration are possible.
+          <span class="splash-title-accent">
+            Earth
           </span>
-        </div>
+        </h1>
 
-        <div class="splash-explanation-item">
-          <strong>
-            Progress is Regional
-          </strong>
-
-          <span>
-            Regional differences reveal where restoration is succeeding
-            and where ecosystems continue to face challenges.
-          </span>
-        </div>
+        <p class="splash-tagline">
+          A virtual tour of a more hopeful outlook on the greenery
+          of our planet.
+        </p>
       </div>
 
       <div
-        class="splash-legend"
-        aria-label="How to read the visualization"
+        id="splash-detail"
+        class="splash-detail"
       >
-        <div
-          class="legend-chip legend-chip--intensity legend-chip--lower"
-        >
-          <span
-            class="legend-gradient-preview legend-gradient-preview--lower"
-            aria-hidden="true"
-          ></span>
-
-          <span>
-            <strong class="legend-label-lower">
-              Light colors
-            </strong>
-            = lower NDVI
-          </span>
-        </div>
+        <p class="splash-detail-text">
+          Human activity has placed pressure on ecosystems around the
+          world, and many people may expect the planet to be steadily
+          losing vegetation. Surprisingly, MODIS satellite data shows
+          that large areas became greener between 2000 and 2025. But
+          this progress is uneven, and some regions still face
+          deforestation, drought, and land degradation.
+        </p>
 
         <div
-          class="legend-chip legend-chip--intensity legend-chip--higher"
+          class="splash-legend"
+          aria-label="How to read the visualization"
         >
-          <span
-            class="legend-gradient-preview legend-gradient-preview--high"
-            aria-hidden="true"
-          ></span>
+          <div
+            class="legend-chip legend-chip--intensity legend-chip--lower"
+          >
+            <span
+              class="legend-gradient-preview legend-gradient-preview--lower"
+              aria-hidden="true"
+            ></span>
 
-          <span>
-            <strong class="legend-label-higher">
-              Dark green and blue
-            </strong>
-            = higher NDVI
-          </span>
-        </div>
+            <span>
+              <strong class="legend-label-lower">
+                Light colors
+              </strong>
+              = lower NDVI
+            </span>
+          </div>
 
-        <div class="legend-chip legend-chip--growth">
-          <span
-            class="legend-dot legend-dot--growth"
-            aria-hidden="true"
-          ></span>
+          <div
+            class="legend-chip legend-chip--intensity legend-chip--higher"
+          >
+            <span
+              class="legend-gradient-preview legend-gradient-preview--high"
+              aria-hidden="true"
+            ></span>
 
-          <span>
-            Green = vegetation growth
-          </span>
-        </div>
+            <span>
+              <strong class="legend-label-higher">
+                Dark green and blue
+              </strong>
+              = higher NDVI
+            </span>
+          </div>
 
-        <div class="legend-chip legend-chip--decline">
-          <span
-            class="legend-dot legend-dot--decline"
-            aria-hidden="true"
-          ></span>
+          <div class="legend-chip legend-chip--growth">
+            <span
+              class="legend-dot legend-dot--growth"
+              aria-hidden="true"
+            ></span>
 
-          <span>
-            Orange = vegetation decline
-          </span>
-        </div>
+            <span>
+              Green = vegetation growth
+            </span>
+          </div>
 
-        <div class="legend-chip legend-chip--height">
-          <span
-            class="legend-dot legend-dot--height"
-            aria-hidden="true"
-          ></span>
+          <div class="legend-chip legend-chip--decline">
+            <span
+              class="legend-dot legend-dot--decline"
+              aria-hidden="true"
+            ></span>
 
-          <span>
-            Taller spikes = higher vegetation density or greater change
-          </span>
+            <span>
+              Orange = vegetation decline
+            </span>
+          </div>
+
+          <div class="legend-chip legend-chip--height">
+            <span
+              class="legend-dot legend-dot--height"
+              aria-hidden="true"
+            ></span>
+
+            <span>
+              Taller spikes = greater density or change
+            </span>
+          </div>
         </div>
       </div>
 
-      <button
-        id="start-button"
-        class="start-button"
-        type="button"
-        disabled
-      >
-        Loading Map...
-      </button>
+      <div class="splash-cta">
+        <button
+          id="start-button"
+          class="start-button"
+          type="button"
+        >
+          Start the tour
+        </button>
 
-      <p
-        id="loading-status"
-        class="loading-status"
-        role="status"
-        aria-live="polite"
-      >
-        Preparing the interactive globe...
-      </p>
+        <p
+          id="loading-status"
+          class="loading-status"
+          role="status"
+          aria-live="polite"
+        ></p>
+      </div>
     </div>
   </section>
 

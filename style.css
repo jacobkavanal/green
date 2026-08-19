@@ -1,4 +1,88 @@
+/* =========================================================
+   Fonts
+
+   Neue Regrade is the sans used everywhere. The variable file
+   covers the whole 300-800 upright range in one download; the
+   italics ship as statics because the family's "ital" axis is
+   a 0-12 slant, which CSS font-style cannot address.
+
+   Advercase is the display face, used only for big titles.
+   Both live under fonts/.
+   ========================================================= */
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("fonts/neue_regrade/Neue Regrade Variable.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade Regular Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade SemiBold Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade Bold Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Advercase";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url("fonts/indieground-advercasefont-demo/Advercase-Font-Demo-Regular.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Advercase";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url("fonts/indieground-advercasefont-demo/Advercase-Font-Demo-Bold.otf")
+      format("opentype");
+}
+
 :root {
+  --font-sans:
+    "Neue Regrade",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --font-display:
+    "Advercase",
+    "Neue Regrade",
+    system-ui,
+    sans-serif;
+
   --bg: #f5f4ef;
   --panel: rgba(255, 255, 255, 0.92);
   --text: #151515;
@@ -25,6 +109,17 @@
   --glass-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
   --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 
+  --splash-bg: #f5f4ef;
+  --splash-ink: #1b2a12;
+  --splash-ink-soft: #33402a;
+  --splash-ink-fine: #3b4634;
+  --splash-ink-faint: #5d6b52;
+  --splash-cta-bg: #e2fb59;
+  --splash-cta-bg-hover: #d5f43a;
+  --splash-cta-ink: #1b2a12;
+
+  --legend-chip-base: rgba(255, 255, 255, 0.66);
+
   color-scheme: light;
 }
 
@@ -50,6 +145,17 @@
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-shadow: 0 22px 65px rgba(0, 0, 0, 0.42);
   --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  --splash-bg: #07110f;
+  --splash-ink: #eaf3e2;
+  --splash-ink-soft: #c3d3b9;
+  --splash-ink-fine: #b2c3a9;
+  --splash-ink-faint: #8ba180;
+  --splash-cta-bg: #d5f43a;
+  --splash-cta-bg-hover: #e2fb59;
+  --splash-cta-ink: #10200a;
+
+  --legend-chip-base: rgba(14, 22, 19, 0.62);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -65,6 +171,17 @@
     --glass-border: rgba(255, 255, 255, 0.16);
     --glass-shadow: 0 22px 65px rgba(0, 0, 0, 0.42);
     --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+    --splash-bg: #07110f;
+    --splash-ink: #eaf3e2;
+    --splash-ink-soft: #c3d3b9;
+    --splash-ink-fine: #b2c3a9;
+    --splash-ink-faint: #8ba180;
+    --splash-cta-bg: #d5f43a;
+    --splash-cta-bg-hover: #e2fb59;
+    --splash-cta-ink: #10200a;
+
+    --legend-chip-base: rgba(14, 22, 19, 0.62);
   }
 }
 
@@ -81,12 +198,7 @@ body {
   overflow: hidden;
   color: var(--text);
   background: var(--bg);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
 }
 
 button,
@@ -98,7 +210,6 @@ select {
    Shared glass surfaces
    ========================================================= */
 
-.splash-card,
 .about-card,
 .tour-card,
 .story-panel p,
@@ -119,7 +230,6 @@ select {
   -webkit-backdrop-filter: blur(22px) saturate(160%);
 }
 
-:root[data-theme="dark"] .splash-card,
 :root[data-theme="dark"] .about-card,
 :root[data-theme="dark"] .tour-card,
 :root[data-theme="dark"] .story-panel p,
@@ -140,7 +250,6 @@ select {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-card,
   :root[data-theme="auto"] .about-card,
   :root[data-theme="auto"] .tour-card,
   :root[data-theme="auto"] .story-panel p,
@@ -161,7 +270,6 @@ select {
   }
 }
 
-.splash-card::before,
 .about-card::before,
 .tour-card::before,
 .chart-panel::before,
@@ -194,7 +302,6 @@ select {
   opacity: 0.28;
 }
 
-:root[data-theme="dark"] .splash-card::before,
 :root[data-theme="dark"] .about-card::before,
 :root[data-theme="dark"] .tour-card::before,
 :root[data-theme="dark"] .chart-panel::before,
@@ -203,7 +310,6 @@ select {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-card::before,
   :root[data-theme="auto"] .about-card::before,
   :root[data-theme="auto"] .tour-card::before,
   :root[data-theme="auto"] .chart-panel::before,
@@ -212,7 +318,6 @@ select {
   }
 }
 
-.splash-card > *,
 .about-card > *,
 .tour-card > *,
 .chart-panel > *,
@@ -253,7 +358,6 @@ select {
   color: var(--text);
 }
 
-:root[data-theme="dark"] .splash-card p,
 :root[data-theme="dark"] .about-card p,
 :root[data-theme="dark"] .tour-card p,
 :root[data-theme="dark"] .story-panel p,
@@ -275,7 +379,6 @@ select {
     color: var(--text);
   }
 
-  :root[data-theme="auto"] .splash-card p,
   :root[data-theme="auto"] .about-card p,
   :root[data-theme="auto"] .tour-card p,
   :root[data-theme="auto"] .story-panel p,
@@ -289,39 +392,24 @@ select {
 
 /* =========================================================
    Splash screen
+
+   Three stages, driven by data-stage on #splash-screen:
+   0 = hero only, 1 = hero plus detail, 2 = globe reveal and
+   handoff to the guided tour.
    ========================================================= */
 
 .splash-screen {
+  --splash-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  overflow-y: auto;
-  background:
-    radial-gradient(
-      circle at 18% 18%,
-      rgba(44, 162, 95, 0.2),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 82% 72%,
-      rgba(231, 111, 81, 0.16),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 72% 20%,
-      rgba(16, 63, 145, 0.08),
-      transparent 28%
-    ),
-    rgba(245, 244, 239, 0.88);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  overflow: hidden;
+  color: var(--splash-ink);
+  background: var(--splash-bg);
   transition:
-    opacity 0.55s ease,
-    visibility 0.55s ease;
+    opacity 0.75s ease,
+    visibility 0.75s ease;
 }
 
 .splash-screen.hidden {
@@ -330,171 +418,235 @@ select {
   pointer-events: none;
 }
 
-:root[data-theme="dark"] .splash-screen {
+/* =========================================================
+   Decorative globe
+
+   Sits blurred below the fold while the copy is read, then
+   grows and sharpens at stage 2 so the real Mapbox globe can
+   fade in behind it.
+   ========================================================= */
+
+.splash-globe {
+  position: absolute;
+  bottom: -70vh;
+  left: 50%;
+  width: 142vh;
+  height: 142vh;
+  border-radius: 50%;
+  opacity: 0.92;
+  transform: translateX(-50%) rotate(-12deg);
+  filter: blur(46px) saturate(1.15);
+  transition:
+    bottom 1.6s var(--splash-ease),
+    width 1.6s var(--splash-ease),
+    height 1.6s var(--splash-ease),
+    transform 1.6s var(--splash-ease),
+    filter 1.5s var(--splash-ease),
+    opacity 1.2s var(--splash-ease);
+}
+
+.splash-screen[data-stage="2"] .splash-globe {
+  bottom: -14vh;
+  width: 128vh;
+  height: 128vh;
+  opacity: 1;
+  transform: translateX(-50%) rotate(-6deg);
+  filter: blur(0) saturate(1.05);
+}
+
+.splash-globe-body,
+.splash-globe-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.splash-globe-body {
   background:
     radial-gradient(
-      circle at 18% 18%,
-      rgba(44, 162, 95, 0.18),
-      transparent 34%
+      circle at 30% 26%,
+      #cfe3a6 0%,
+      transparent 26%
     ),
     radial-gradient(
-      circle at 82% 72%,
-      rgba(231, 111, 81, 0.12),
-      transparent 30%
+      circle at 52% 18%,
+      #efe7d3 0%,
+      transparent 22%
     ),
     radial-gradient(
-      circle at 72% 20%,
-      rgba(16, 63, 145, 0.12),
+      circle at 62% 34%,
+      #103f91 0%,
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 40% 46%,
+      #0d3b3a 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 70% 56%,
+      #0f3f3c 0%,
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 46% 66%,
+      #4fb66f 0%,
       transparent 28%
     ),
-    rgba(16, 19, 18, 0.94);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-screen {
-    background:
-      radial-gradient(
-        circle at 18% 18%,
-        rgba(44, 162, 95, 0.18),
-        transparent 34%
-      ),
-      radial-gradient(
-        circle at 82% 72%,
-        rgba(231, 111, 81, 0.12),
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 72% 20%,
-        rgba(16, 63, 145, 0.12),
-        transparent 28%
-      ),
-      rgba(16, 19, 18, 0.94);
-  }
-}
-
-.splash-card {
-  width: min(760px, 100%);
-  max-height: calc(100vh - 2rem);
-  padding: clamp(1.5rem, 4vw, 3rem);
-  overflow-y: auto;
-  border-radius: 1.6rem;
-  text-align: left;
-  background:
     radial-gradient(
-      circle at top left,
-      rgba(44, 162, 95, 0.16),
-      transparent 36%
+      circle at 78% 74%,
+      #159978 0%,
+      transparent 24%
     ),
     radial-gradient(
-      circle at bottom right,
-      rgba(231, 111, 81, 0.12),
-      transparent 38%
+      circle at 26% 72%,
+      #006f7f 0%,
+      transparent 20%
     ),
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.96),
-      rgba(248, 249, 246, 0.88)
+    radial-gradient(
+      circle at 58% 88%,
+      #73cb8d 0%,
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      #2ca25f 0%,
+      #14705c 62%,
+      #0b3f43 100%
     );
 }
 
-.splash-kicker {
-  margin: 0 0 0.75rem;
-  color: #5d5d5d;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.splash-card h1 {
-  margin: 0 0 1rem;
-  color: var(--text);
-  font-size: clamp(2.3rem, 6vw, 4.5rem);
-  line-height: 0.95;
-}
-
-.splash-card > p {
-  max-width: 680px;
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(0.92rem, 1.35vw, 1.1rem);
-  line-height: 1.65;
-}
-
-:root[data-theme="dark"] .splash-kicker {
-  color: #b8beb9;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-kicker {
-    color: #b8beb9;
-  }
+.splash-globe-sheen {
+  background:
+    radial-gradient(
+      circle at 34% 26%,
+      rgba(255, 255, 255, 0.4),
+      transparent 42%
+    );
 }
 
 /* =========================================================
-   Splash explanation
+   Splash copy
    ========================================================= */
 
-.splash-explanation {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-top: 1.25rem;
+.splash-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  /* "safe" keeps the top of the copy reachable when it
+     overflows a short viewport; older browsers keep "center". */
+  justify-content: safe center;
+
+  padding: 4vh 6vw;
+  overflow-y: auto;
+  text-align: center;
 }
 
-.splash-explanation-item {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.56);
-  border-radius: 1rem;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.6),
-      rgba(255, 255, 255, 0.28)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.66),
-    0 8px 20px rgba(0, 0, 0, 0.06);
+.splash-hero {
+  transition:
+    opacity 0.7s var(--splash-ease),
+    transform 0.9s var(--splash-ease);
 }
 
-.splash-explanation-item strong {
-  color: var(--text);
-  font-size: 0.9rem;
+.splash-screen[data-stage="1"] .splash-hero {
+  transform: scale(0.82);
 }
 
-.splash-explanation-item span {
-  color: var(--muted);
-  font-size: 0.8rem;
+.splash-screen[data-stage="2"] .splash-hero {
+  opacity: 0;
+  transform: translateY(-24px) scale(0.94);
+  pointer-events: none;
+}
+
+.splash-screen h1 {
+  margin: 0;
+  color: var(--splash-ink);
+  font-size: clamp(2.8rem, 8.6vw, 7.6rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+}
+
+/* Only "Earth" carries the display face. */
+
+.splash-title-accent {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.86em;
+}
+
+.splash-tagline {
+  max-width: 34ch;
+  margin: clamp(1rem, 2.5vh, 2rem) auto 0;
+  color: var(--splash-ink-soft);
+  font-size: clamp(1rem, 1.6vw, 1.45rem);
+  font-weight: 400;
   line-height: 1.45;
+  text-wrap: pretty;
 }
 
-:root[data-theme="dark"] .splash-explanation-item {
-  border-color: rgba(255, 255, 255, 0.13);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.035)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+.splash-detail {
+  max-width: min(880px, 100%);
+  max-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(18px);
+  pointer-events: none;
+  transition:
+    opacity 0.75s var(--splash-ease),
+    transform 0.75s var(--splash-ease),
+    max-height 0.75s var(--splash-ease),
+    margin-top 0.75s var(--splash-ease);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-explanation-item {
-    border-color: rgba(255, 255, 255, 0.13);
-    background:
-      linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.035)
-      );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 10px 24px rgba(0, 0, 0, 0.18);
+.splash-screen[data-stage="1"] .splash-detail {
+  max-height: 80vh;
+  margin-top: clamp(1.5rem, 4vh, 3rem);
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition:
+    opacity 0.75s var(--splash-ease) 0.1s,
+    transform 0.75s var(--splash-ease),
+    max-height 0.75s var(--splash-ease),
+    margin-top 0.75s var(--splash-ease);
+}
+
+.splash-detail-text {
+  max-width: 62ch;
+  margin: 0 auto;
+  color: var(--splash-ink-fine);
+  font-size: clamp(0.9rem, 1.1vw, 1.02rem);
+  font-weight: 400;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.splash-cta {
+  margin-top: clamp(1.5rem, 4vh, 2.75rem);
+  transition:
+    opacity 0.5s var(--splash-ease),
+    transform 0.6s var(--splash-ease);
+}
+
+.splash-screen[data-stage="2"] .splash-cta {
+  opacity: 0;
+  transform: translateY(16px);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen,
+  .splash-globe,
+  .splash-hero,
+  .splash-detail,
+  .splash-cta {
+    transition-duration: 0.01ms;
   }
 }
 
@@ -505,9 +657,13 @@ select {
 .splash-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 1.35rem 0;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.4rem 0 0;
 }
+
+/* The chips sit over the decorative globe, so each tint is
+   layered on an opaque base rather than used on its own. */
 
 .legend-chip {
   display: inline-flex;
@@ -516,6 +672,7 @@ select {
   padding: 0.55rem 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.62);
   border-radius: 999px;
+  background-color: var(--legend-chip-base);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
   font-size: 0.87rem;
   line-height: 1.2;
@@ -526,7 +683,7 @@ select {
 }
 
 .legend-chip--lower {
-  background:
+  background-image:
     linear-gradient(
       135deg,
       rgba(239, 231, 211, 0.5),
@@ -535,7 +692,7 @@ select {
 }
 
 .legend-chip--higher {
-  background:
+  background-image:
     linear-gradient(
       135deg,
       rgba(21, 153, 120, 0.17),
@@ -545,17 +702,29 @@ select {
 
 .legend-chip--growth {
   color: var(--growth-green-dark);
-  background: rgba(44, 162, 95, 0.13);
+  background-image:
+    linear-gradient(
+      rgba(44, 162, 95, 0.14),
+      rgba(44, 162, 95, 0.14)
+    );
 }
 
 .legend-chip--decline {
   color: var(--decline-orange-dark);
-  background: rgba(231, 111, 81, 0.13);
+  background-image:
+    linear-gradient(
+      rgba(231, 111, 81, 0.14),
+      rgba(231, 111, 81, 0.14)
+    );
 }
 
 .legend-chip--height {
   color: #36516f;
-  background: rgba(16, 63, 145, 0.08);
+  background-image:
+    linear-gradient(
+      rgba(16, 63, 145, 0.09),
+      rgba(16, 63, 145, 0.09)
+    );
 }
 
 .legend-gradient-preview {
@@ -592,12 +761,12 @@ select {
 
 .legend-label-lower {
   color: #8a7b3f;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .legend-label-higher {
   color: #087b7c;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .legend-dot {
@@ -662,40 +831,44 @@ select {
 }
 
 .start-button {
-  padding: 0.85rem 1.3rem;
+  padding: 1.05rem 2.6rem;
   border: 0;
   border-radius: 999px;
-  color: white;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(17, 17, 17, 0.94),
-      rgba(17, 17, 17, 0.76)
-    );
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  color: var(--splash-cta-ink);
+  background: var(--splash-cta-bg);
+  box-shadow: 0 10px 30px rgba(27, 42, 18, 0.18);
   font: inherit;
-  font-weight: 700;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
 }
 
-.start-button:hover {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(44, 162, 95, 0.96),
-      rgba(31, 126, 74, 0.78)
-    );
+.start-button:hover:not(:disabled) {
+  background: var(--splash-cta-bg-hover);
+  transform: translateY(-1px);
+}
+
+.start-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
 }
 
 .start-button:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: wait;
 }
 
 .loading-status {
-  margin-top: 0.9rem !important;
-  color: var(--muted);
-  font-size: 0.8rem !important;
+  height: 1.1rem;
+  margin: 1rem 0 0;
+  color: var(--splash-ink-faint);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* =========================================================
@@ -725,6 +898,8 @@ select {
 
 .brand strong {
   display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: clamp(0.95rem, 1.1vw, 1.15rem);
   line-height: 1.1;
 }
@@ -760,6 +935,7 @@ select {
 
 .compare-tab {
   min-width: clamp(130px, 12vw, 185px);
+  font-weight: 500;
   margin: 0;
   padding:
     clamp(0.55rem, 0.9vw, 0.85rem)
@@ -801,7 +977,7 @@ select {
       rgba(255, 255, 255, 0.96),
       rgba(255, 255, 255, 0.68)
     );
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .compare-tab small {
@@ -809,7 +985,7 @@ select {
   margin-top: 0.3rem;
   color: #555;
   font-size: clamp(0.58rem, 0.7vw, 0.68rem);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .region-jump {
@@ -1170,7 +1346,7 @@ body.mode-compare .compare-switch {
     );
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   text-align: center;
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -1205,6 +1381,8 @@ body.mode-compare .compare-switch {
 .story-panel h2 {
   margin: 0 0 1rem;
   color: #111;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   line-height: 1.1;
 }
@@ -1285,7 +1463,7 @@ body.mode-compare .story-panel {
   gap: 0.45rem;
   color: #222;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
   text-shadow:
@@ -1412,6 +1590,7 @@ body.mode-compare .chart-panel {
 .chart-panel h3 {
   margin: 0 0 0.8rem;
   font-size: 1rem;
+  font-weight: 600;
   line-height: 1.2;
 }
 
@@ -1622,13 +1801,15 @@ body.tour-open .tour-overlay {
   margin: 0 0 0.5rem;
   color: var(--growth-green);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .tour-card h2 {
   margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 1.6rem;
   line-height: 1.15;
 }
@@ -1651,7 +1832,7 @@ body.tour-open .tour-overlay {
   border: 0;
   border-radius: 999px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -1750,19 +1931,22 @@ body.about-open .about-modal {
   margin: 0 0 0.5rem;
   color: var(--growth-green);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .about-card h2 {
   margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 2rem;
 }
 
 .about-card h3 {
   margin: 1.35rem 0 0.4rem;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .about-card p {
@@ -1777,7 +1961,7 @@ body.about-open .about-modal {
 
 .about-card a {
   color: var(--growth-green);
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 
@@ -1987,7 +2171,7 @@ body.takeaway-open .takeaway-overlay {
   margin: 0 0 0.55rem;
   color: var(--growth-green);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1996,7 +2180,9 @@ body.takeaway-open .takeaway-overlay {
   max-width: 720px;
   margin: 0 0 0.9rem;
   padding-right: 2.5rem;
+  font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3.3rem);
+  font-weight: 700;
   line-height: 1.03;
 }
 
@@ -2058,7 +2244,7 @@ body.takeaway-open .takeaway-overlay {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.56);
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -2078,6 +2264,7 @@ body.takeaway-open .takeaway-overlay {
 .takeaway-point h3 {
   margin: 0 0 0.55rem;
   font-size: 1rem;
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -2104,6 +2291,7 @@ body.takeaway-open .takeaway-overlay {
 .takeaway-why h3 {
   margin: 0 0 0.5rem;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .takeaway-why p {
@@ -2130,7 +2318,7 @@ body.takeaway-open .takeaway-overlay {
   border: 0;
   border-radius: 999px;
   font: inherit;
-  font-weight: 750;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -2208,7 +2396,7 @@ body.takeaway-open .takeaway-overlay {
 
 :root[data-theme="dark"] .takeaway-card > h2 {
   color: #f7faf8;
-  font-weight: 760;
+  font-weight: 700;
   letter-spacing: -0.035em;
   text-shadow: 0 3px 20px rgba(0, 0, 0, 0.28);
 }
@@ -2269,7 +2457,7 @@ body.takeaway-open .takeaway-overlay {
 
 :root[data-theme="dark"] .takeaway-point h3 {
   color: #f4f7f5;
-  font-weight: 720;
+  font-weight: 600;
 }
 
 :root[data-theme="dark"] .takeaway-point p {
@@ -2291,7 +2479,7 @@ body.takeaway-open .takeaway-overlay {
 
 :root[data-theme="dark"] .takeaway-why h3 {
   color: #f4f7f5;
-  font-weight: 720;
+  font-weight: 600;
 }
 
 :root[data-theme="dark"] .takeaway-why p {
@@ -2365,7 +2553,7 @@ body.takeaway-open .takeaway-overlay {
 
   :root[data-theme="auto"] .takeaway-card > h2 {
     color: #f7faf8;
-    font-weight: 760;
+    font-weight: 700;
     letter-spacing: -0.035em;
     text-shadow: 0 3px 20px rgba(0, 0, 0, 0.28);
   }
@@ -2426,7 +2614,7 @@ body.takeaway-open .takeaway-overlay {
 
   :root[data-theme="auto"] .takeaway-point h3 {
     color: #f4f7f5;
-    font-weight: 720;
+    font-weight: 600;
   }
 
   :root[data-theme="auto"] .takeaway-point p {
@@ -2448,7 +2636,7 @@ body.takeaway-open .takeaway-overlay {
 
   :root[data-theme="auto"] .takeaway-why h3 {
     color: #f4f7f5;
-    font-weight: 720;
+    font-weight: 600;
   }
 
   :root[data-theme="auto"] .takeaway-why p {
@@ -2698,7 +2886,7 @@ body.takeaway-open .takeaway-overlay {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
     font: inherit;
     font-size: 0.78rem;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   body.mode-change .mobile-chart-toggle {
@@ -2763,39 +2951,35 @@ body.takeaway-open .takeaway-overlay {
     padding: 1.25rem;
   }
 
-  .splash-screen {
-    align-items: flex-start;
-    padding: 1rem;
+  .splash-content {
+    justify-content: flex-start;
+    padding: 8vh 1.25rem 2rem;
   }
 
-  .splash-card {
-    max-height: none;
-    padding: 1.35rem;
-    border-radius: 1.1rem;
+  .splash-globe {
+    bottom: -62vh;
+    width: 118vh;
+    height: 118vh;
   }
 
-  .splash-card h1 {
-    font-size: 2.25rem;
+  .splash-screen[data-stage="2"] .splash-globe {
+    bottom: -18vh;
+    width: 108vh;
+    height: 108vh;
   }
 
-  .splash-card > p {
+  .splash-screen h1 {
+    font-size: clamp(2.6rem, 15vw, 4rem);
+  }
+
+  .splash-detail-text {
     font-size: 0.88rem;
-    line-height: 1.5;
-  }
-
-  .splash-explanation {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-    margin-top: 0.9rem;
-  }
-
-  .splash-explanation-item {
-    padding: 0.7rem 0.8rem;
+    line-height: 1.55;
   }
 
   .splash-legend {
-    gap: 0.55rem;
-    margin: 1rem 0;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
 
   .legend-chip {
@@ -2803,6 +2987,7 @@ body.takeaway-open .takeaway-overlay {
     justify-content: flex-start;
     padding: 0.5rem 0.65rem;
     font-size: 0.76rem;
+    text-align: left;
   }
 
   .start-button {
