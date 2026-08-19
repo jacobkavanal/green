@@ -147,31 +147,13 @@ const regionBounds = {
    Data files
    ========================================================= */
 
-const spikeFilesByDetail = {
-  "2000": {
-    low: "data/actual_ndvi_spikes_2000_low.json",
-    medium: "data/actual_ndvi_spikes_2000_medium.json",
-    high: "data/actual_ndvi_spikes_2000_high.json"
-  },
+/*
+  Datasets are named, not pathed. grid.js resolves a (dataset, detail) pair to
+  a file through data/grid/manifest.json.
+*/
+const spikeDatasets = ["2000", "2013", "2025"];
 
-  "2013": {
-    low: "data/actual_ndvi_spikes_2013_low.json",
-    medium: "data/actual_ndvi_spikes_2013_medium.json",
-    high: "data/actual_ndvi_spikes_2013_high.json"
-  },
-
-  "2025": {
-    low: "data/actual_ndvi_spikes_2025_low.json",
-    medium: "data/actual_ndvi_spikes_2025_medium.json",
-    high: "data/actual_ndvi_spikes_2025_high.json"
-  }
-};
-
-const changeFilesByDetail = {
-  low: "data/actual_ndvi_change_2000_2025_low.json",
-  medium: "data/actual_ndvi_change_2000_2025_medium.json",
-  high: "data/actual_ndvi_change_2000_2025_high.json"
-};
+const changeDataset = "change";
 
 const emptyGeoJSON = {
   type: "FeatureCollection",
@@ -195,9 +177,6 @@ let activeView = "global";
 let compareBaseYear = "2000";
 let currentTourStep = 0;
 
-let cachedData = {};
-let cachedChangeData = {};
-
 let syncing = false;
 let isLoadingDetail = false;
 let appReady = false;
@@ -206,6 +185,17 @@ let activeDetail = {
   present: "low",
   compare: null,
   change: null
+};
+
+/*
+  What is currently on each map, as "dataset(s)@detail". Each map holds the
+  whole globe, so this only changes when the detail level or the dataset does -
+  never on a pan.
+*/
+let activeDataSignature = {
+  present: "",
+  compare: "",
+  change: ""
 };
 
 /* =========================================================
@@ -394,9 +384,7 @@ async function initAllMaps() {
 
   updateSplashStatus("Loading 2025 vegetation layer...");
 
-  const data2025Low = await getGeoJSON("2025", "low");
-
-  setupMapLayer(singleMap, data2025Low, "present");
+  setupMapLayer(singleMap, emptyGeoJSON, "present");
   setupMapLayer(leftMap, emptyGeoJSON, "compare");
   setupMapLayer(rightMap, emptyGeoJSON, "compare");
 
@@ -428,13 +416,16 @@ async function initAllMaps() {
 
   currentMode = "present";
   activeView = "global";
-  activeDetail.present = "low";
 
   jumpMapTo(singleMap, views.global);
   jumpMapTo(leftMap, views.global);
   jumpMapTo(rightMap, views.global);
 
   resizeMaps();
+
+  /* Camera is in place, so the visible tiles are now known. */
+  await refreshVisibleData(true);
+
   preloadLikelyNextFiles();
 
   appReady = true;
@@ -476,47 +467,59 @@ function setupThemeSwitcher() {
    Data loading
    ========================================================= */
 
+/*
+  Warm the medium grids, which the region charts need and which a first zoom
+  is likely to want. These are ~0.7 MB each now, so this costs about as much
+  as a photograph.
+*/
 function preloadLikelyNextFiles() {
   window.setTimeout(() => {
-    getGeoJSON("2025", "medium").catch(console.error);
-    getGeoJSON("2000", "medium").catch(console.error);
-    getGeoJSON("2013", "medium").catch(console.error);
-    getChangeGeoJSON("medium").catch(console.error);
+    spikeDatasets.forEach(year => {
+      loadGrid(year, "medium").catch(console.error);
+    });
+
+    loadGrid(changeDataset, "medium")
+      .catch(console.error);
+
+    /*
+      Build the collection a first zoom-in will land on, while the browser is
+      otherwise idle, so crossing the detail threshold does not have to pay for
+      it. Only the one the user is most likely to hit - building all of them
+      would blow past the cache budget and evict what is on screen.
+    */
+    const buildAhead = () => {
+      globeCollection("2025", "medium")
+        .catch(console.error);
+    };
+
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(buildAhead, {
+        timeout: 4000
+      });
+    } else {
+      window.setTimeout(buildAhead, 2500);
+    }
   }, 1500);
 }
 
-async function getGeoJSON(year, detail) {
-  const key = `${year}-${detail}`;
+async function applyDatasetToMap(
+  map,
+  sourceId,
+  dataset,
+  detail
+) {
+  const collection = await globeCollection(
+    dataset,
+    detail
+  );
 
-  if (!cachedData[key]) {
-    cachedData[key] = loadGeoJSON(
-      spikeFilesByDetail[year][detail]
-    );
+  const source = map.getSource(sourceId);
+
+  if (source) {
+    source.setData(collection);
   }
 
-  return cachedData[key];
-}
-
-async function getChangeGeoJSON(detail) {
-  if (!cachedChangeData[detail]) {
-    cachedChangeData[detail] = loadGeoJSON(
-      changeFilesByDetail[detail]
-    );
-  }
-
-  return cachedChangeData[detail];
-}
-
-async function loadGeoJSON(path) {
-  const response = await fetch(path);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to load ${path}: ${response.status}`
-    );
-  }
-
-  return response.json();
+  return collection;
 }
 
 /* =========================================================
@@ -692,50 +695,70 @@ function debounce(func, wait) {
   };
 }
 
+/*
+  The detail level follows the camera's zoom. `moveend` covers zooming as well
+  as panning; a pan leaves the signature unchanged, so refreshVisibleData()
+  returns immediately and panning stays free.
+*/
 function setupDetailSwitching() {
-  const handleSingleZoom = debounce(async () => {
+  const handleSingleMove = debounce(() => {
     if (
       currentMode === "present" ||
       currentMode === "change"
     ) {
-      await loadDetailForCurrentView(
-        activeView,
-        getCurrentCamera(singleMap)
-      );
+      refreshVisibleData();
     }
-  }, 300);
+  }, 250);
 
-  const handleCompareZoom = debounce(async map => {
+  const handleCompareMove = debounce(() => {
     if (currentMode === "compare") {
-      await loadDetailForCurrentView(
-        activeView,
-        getCurrentCamera(map)
-      );
+      refreshVisibleData();
     }
-  }, 300);
+  }, 250);
 
-  singleMap.on("zoomend", handleSingleZoom);
-
-  leftMap.on("zoomend", () => {
-    handleCompareZoom(leftMap);
-  });
-
-  rightMap.on("zoomend", () => {
-    handleCompareZoom(rightMap);
-  });
+  singleMap.on("moveend", handleSingleMove);
+  leftMap.on("moveend", handleCompareMove);
+  rightMap.on("moveend", handleCompareMove);
 }
 
-async function loadDetailForCurrentView(viewName, view) {
-  if (isLoadingDetail || !view) {
+/*
+  Bring the active mode's maps in line with the current camera.
+
+  Each map holds the whole globe, so this is a no-op for panning: only a change
+  of detail level (or of which dataset feeds a map) produces new work. That is
+  the whole point - setData() reprocesses an entire source, so it must not be
+  on the pan path.
+*/
+async function refreshVisibleData(force = false) {
+  if (isLoadingDetail) {
+    return;
+  }
+
+  const referenceMap =
+    currentMode === "compare" ? leftMap : singleMap;
+
+  const camera = getCurrentCamera(referenceMap);
+
+  if (!camera) {
     return;
   }
 
   const detail =
     currentMode === "change"
-      ? changeDetailFromZoom(view.zoom, viewName)
-      : detailFromZoom(view.zoom, viewName);
+      ? changeDetailFromZoom(camera.zoom, activeView)
+      : detailFromZoom(camera.zoom, activeView);
 
-  if (detail === activeDetail[currentMode]) {
+  const signature =
+    currentMode === "compare"
+      ? `${compareBaseYear}+2025@${detail}`
+      : currentMode === "change"
+        ? `change@${detail}`
+        : `2025@${detail}`;
+
+  if (
+    !force &&
+    signature === activeDataSignature[currentMode]
+  ) {
     return;
   }
 
@@ -743,61 +766,46 @@ async function loadDetailForCurrentView(viewName, view) {
 
   try {
     if (currentMode === "present") {
-      const data2025 = await getGeoJSON(
+      await applyDatasetToMap(
+        singleMap,
+        "spikes",
         "2025",
         detail
       );
-
-      const source =
-        singleMap.getSource("spikes");
-
-      if (source) {
-        source.setData(data2025);
-      }
-
-      activeDetail.present = detail;
     }
 
     if (currentMode === "compare") {
-      const [leftData, rightData] =
-        await Promise.all([
-          getGeoJSON(compareBaseYear, detail),
-          getGeoJSON("2025", detail)
-        ]);
+      await Promise.all([
+        applyDatasetToMap(
+          leftMap,
+          "spikes",
+          compareBaseYear,
+          detail
+        ),
 
-      const leftSource =
-        leftMap.getSource("spikes");
-
-      const rightSource =
-        rightMap.getSource("spikes");
-
-      if (leftSource) {
-        leftSource.setData(leftData);
-      }
-
-      if (rightSource) {
-        rightSource.setData(rightData);
-      }
-
-      activeDetail.compare = detail;
+        applyDatasetToMap(
+          rightMap,
+          "spikes",
+          "2025",
+          detail
+        )
+      ]);
     }
 
     if (currentMode === "change") {
-      const changeData =
-        await getChangeGeoJSON(detail);
-
-      const source =
-        singleMap.getSource("change-spikes");
-
-      if (source) {
-        source.setData(changeData);
-      }
-
-      activeDetail.change = detail;
+      await applyDatasetToMap(
+        singleMap,
+        "change-spikes",
+        changeDataset,
+        detail
+      );
     }
+
+    activeDetail[currentMode] = detail;
+    activeDataSignature[currentMode] = signature;
   } catch (error) {
     console.error(
-      "Unable to change map detail:",
+      "Unable to refresh map data:",
       error
     );
   } finally {
@@ -847,29 +855,8 @@ function setupCompareYearSwitch() {
         return;
       }
 
-      const camera =
-        getCurrentCamera(leftMap);
-
-      const detail =
-        detailFromZoom(
-          camera.zoom,
-          activeView
-        );
-
-      const data =
-        await getGeoJSON(
-          compareBaseYear,
-          detail
-        );
-
-      const source =
-        leftMap.getSource("spikes");
-
-      if (source) {
-        source.setData(data);
-      }
-
-      activeDetail.compare = detail;
+      /* The left map now shows a different year over the same tiles. */
+      await refreshVisibleData(true);
     });
   });
 }
@@ -898,6 +885,7 @@ function clearCompareMaps() {
   }
 
   activeDetail.compare = null;
+  activeDataSignature.compare = "";
 }
 
 async function setMode(mode) {
@@ -916,34 +904,13 @@ async function setMode(mode) {
     `mode-${mode}`
   );
 
+  /*
+    Camera first, data second: which tiles get built depends on where the
+    camera ends up, so every branch below positions the maps and then lets
+    refreshVisibleData() fill them.
+  */
   if (mode === "compare") {
     closeMobileChart();
-
-    const detail =
-      detailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const [leftData, rightData] =
-      await Promise.all([
-        getGeoJSON(compareBaseYear, detail),
-        getGeoJSON("2025", detail)
-      ]);
-
-    const leftSource =
-      leftMap.getSource("spikes");
-
-    const rightSource =
-      rightMap.getSource("spikes");
-
-    if (leftSource) {
-      leftSource.setData(leftData);
-    }
-
-    if (rightSource) {
-      rightSource.setData(rightData);
-    }
 
     if (leftMap.getLayer("spikes-layer")) {
       leftMap.setPaintProperty(
@@ -961,33 +928,12 @@ async function setMode(mode) {
       );
     }
 
-    activeDetail.compare = detail;
-
     jumpMapTo(leftMap, previousCamera);
     jumpMapTo(rightMap, previousCamera);
   }
 
   if (mode === "present") {
     clearCompareMaps();
-
-    const detail =
-      detailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const data2025 =
-      await getGeoJSON(
-        "2025",
-        detail
-      );
-
-    const source =
-      singleMap.getSource("spikes");
-
-    if (source) {
-      source.setData(data2025);
-    }
 
     if (singleMap.getLayer("spikes-layer")) {
       singleMap.setLayoutProperty(
@@ -1011,8 +957,6 @@ async function setMode(mode) {
       );
     }
 
-    activeDetail.present = detail;
-
     if (activeView === "global") {
       jumpMapTo(singleMap, views.global);
     } else {
@@ -1022,22 +966,6 @@ async function setMode(mode) {
 
   if (mode === "change") {
     clearCompareMaps();
-
-    const detail =
-      changeDetailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const changeData =
-      await getChangeGeoJSON(detail);
-
-    const source =
-      singleMap.getSource("change-spikes");
-
-    if (source) {
-      source.setData(changeData);
-    }
 
     if (singleMap.getLayer("spikes-layer")) {
       singleMap.setLayoutProperty(
@@ -1055,8 +983,6 @@ async function setMode(mode) {
       );
     }
 
-    activeDetail.change = detail;
-
     if (activeView === "global") {
       jumpMapTo(singleMap, views.global);
     } else {
@@ -1065,6 +991,8 @@ async function setMode(mode) {
   }
 
   resizeMaps();
+
+  await refreshVisibleData(true);
 }
 
 /* =========================================================
@@ -1123,18 +1051,10 @@ async function flyAllTo(viewName) {
     return;
   }
 
-  const primaryMap =
-    currentMode === "compare"
-      ? leftMap
-      : singleMap;
-
-  primaryMap.once("moveend", async () => {
-    await loadDetailForCurrentView(
-      viewName,
-      getCurrentCamera(primaryMap)
-    );
-  });
-
+  /*
+    No explicit reload here: setupDetailSwitching() listens for moveend on
+    every map, so the flight's arrival triggers the refresh.
+  */
   if (currentMode === "compare") {
     mapFlyTo(leftMap, view);
     mapFlyTo(rightMap, view);
@@ -1461,117 +1381,11 @@ window.addEventListener(
    Chart calculations
    ========================================================= */
 
-function featureCenter(feature) {
-  const ring =
-    feature.geometry?.coordinates?.[0];
-
-  if (!ring || !ring.length) {
-    return {
-      lon: 0,
-      lat: 0
-    };
-  }
-
-  let longitudeSum = 0;
-  let latitudeSum = 0;
-
-  ring.forEach(coordinate => {
-    longitudeSum += coordinate[0];
-    latitudeSum += coordinate[1];
-  });
-
-  return {
-    lon: longitudeSum / ring.length,
-    lat: latitudeSum / ring.length
-  };
-}
-
-function pointInBounds(
-  longitude,
-  latitude,
-  bounds
-) {
-  const [
-    longitudeMinimum,
-    longitudeMaximum,
-    latitudeMinimum,
-    latitudeMaximum
-  ] = bounds;
-
-  return (
-    longitude >= longitudeMinimum &&
-    longitude <= longitudeMaximum &&
-    latitude >= latitudeMinimum &&
-    latitude <= latitudeMaximum
-  );
-}
-
-function polygonAreaKm2(coordinates) {
-  const earthRadiusKm = 6371;
-  let area = 0;
-
-  if (
-    !coordinates ||
-    coordinates.length < 4
-  ) {
-    return 0;
-  }
-
-  for (
-    let index = 0;
-    index < coordinates.length - 1;
-    index += 1
-  ) {
-    const longitude1 =
-      coordinates[index][0] *
-      Math.PI /
-      180;
-
-    const latitude1 =
-      coordinates[index][1] *
-      Math.PI /
-      180;
-
-    const longitude2 =
-      coordinates[index + 1][0] *
-      Math.PI /
-      180;
-
-    const latitude2 =
-      coordinates[index + 1][1] *
-      Math.PI /
-      180;
-
-    area +=
-      (longitude2 - longitude1) *
-      (
-        2 +
-        Math.sin(latitude1) +
-        Math.sin(latitude2)
-      );
-  }
-
-  return Math.abs(
-    area *
-      earthRadiusKm *
-      earthRadiusKm /
-      2
-  );
-}
-
-function featureAreaKm2(feature) {
-  if (
-    !feature.geometry ||
-    feature.geometry.type !== "Polygon"
-  ) {
-    return 0;
-  }
-
-  const outerRing =
-    feature.geometry.coordinates[0];
-
-  return polygonAreaKm2(outerRing);
-}
+/*
+  Cell geometry used to be recovered from each feature's polygon ring. The grid
+  knows it directly, so featureCenter / pointInBounds / polygonAreaKm2 /
+  featureAreaKm2 are gone - see gridMeanNdvi() and gridChangeTotals().
+*/
 
 function formatArea(value) {
   if (!Number.isFinite(value)) {
@@ -1593,19 +1407,6 @@ function formatArea(value) {
   return `${value.toFixed(1)} km²`;
 }
 
-function mean(values) {
-  if (!values.length) {
-    return null;
-  }
-
-  const total = values.reduce(
-    (sum, value) => sum + value,
-    0
-  );
-
-  return total / values.length;
-}
-
 async function computeRegionChartStats(viewName) {
   const cacheKey =
     `${viewName}-medium`;
@@ -1619,105 +1420,43 @@ async function computeRegionChartStats(viewName) {
     regionBounds.global;
 
   const [
-    data2000,
-    data2013,
-    data2025,
-    changeData
+    grid2000,
+    grid2013,
+    grid2025,
+    changeGrid
   ] = await Promise.all([
-    getGeoJSON("2000", "medium"),
-    getGeoJSON("2013", "medium"),
-    getGeoJSON("2025", "medium"),
-    getChangeGeoJSON("medium")
+    loadGrid("2000", "medium"),
+    loadGrid("2013", "medium"),
+    loadGrid("2025", "medium"),
+    loadGrid(changeDataset, "medium")
   ]);
 
-  function collectMeanNDVI(data) {
-    const values = [];
+  const totals = gridChangeTotals(
+    changeGrid,
+    bounds
+  );
 
-    data.features.forEach(feature => {
-      const center =
-        featureCenter(feature);
-
-      if (
-        !pointInBounds(
-          center.lon,
-          center.lat,
-          bounds
-        )
-      ) {
-        return;
-      }
-
-      const ndvi = Number(
-        feature.properties?.ndvi
-      );
-
-      if (Number.isFinite(ndvi)) {
-        values.push(ndvi);
-      }
-    });
-
-    return mean(values);
-  }
-
-  let growthCount = 0;
-  let declineCount = 0;
-
-  let addedAreaKm2 = 0;
-  let lostAreaKm2 = 0;
-
-  changeData.features.forEach(feature => {
-    const center =
-      featureCenter(feature);
-
-    if (
-      !pointInBounds(
-        center.lon,
-        center.lat,
-        bounds
-      )
-    ) {
-      return;
-    }
-
-    const change = Number(
-      feature.properties?.change
-    );
-
-    const areaKm2 =
-      featureAreaKm2(feature);
-
-    if (change > 0) {
-      growthCount += 1;
-      addedAreaKm2 += areaKm2;
-    }
-
-    if (change < 0) {
-      declineCount += 1;
-      lostAreaKm2 += areaKm2;
-    }
-  });
-
-  const totalChange =
-    growthCount + declineCount;
+  const changedCells =
+    totals.growthCount + totals.declineCount;
 
   const stats = {
     ndvi: {
-      "2000": collectMeanNDVI(data2000),
-      "2013": collectMeanNDVI(data2013),
-      "2025": collectMeanNDVI(data2025)
+      "2000": gridMeanNdvi(grid2000, bounds),
+      "2013": gridMeanNdvi(grid2013, bounds),
+      "2025": gridMeanNdvi(grid2025, bounds)
     },
 
     change: {
-      growthPct: totalChange
-        ? growthCount / totalChange
+      growthPct: changedCells
+        ? totals.growthCount / changedCells
         : 0,
 
-      declinePct: totalChange
-        ? declineCount / totalChange
+      declinePct: changedCells
+        ? totals.declineCount / changedCells
         : 0,
 
-      addedAreaKm2,
-      lostAreaKm2
+      addedAreaKm2: totals.addedAreaKm2,
+      lostAreaKm2: totals.lostAreaKm2
     }
   };
 
@@ -2185,10 +1924,7 @@ async function closeGuidedTour() {
     views.global
   );
 
-  await loadDetailForCurrentView(
-    "global",
-    getCurrentCamera(singleMap)
-  );
+  await refreshVisibleData(true);
 
   resizeMaps();
 }
