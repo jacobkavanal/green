@@ -1,9 +1,126 @@
+/* =========================================================
+   Fonts
+
+   Aeonik Pro is the sans. Only two upright faces were supplied
+   - Regular and Medium - so the Medium @font-face claims the
+   whole 500-900 range. Without that range a request for 600
+   would be synthesised into a faux bold; with it, 600 resolves
+   to real Medium glyphs. The sans tops out at 600 in this file
+   and every 700 belongs to a heading set in --font-display,
+   which has its own bold, so nothing is flattened today. Adding
+   sans text above 600 would be: give an Aeonik Bold woff2 its
+   own @font-face first.
+
+   The files are subsets (226 codepoints, Latin). That covers
+   every character the site currently renders, but new copy with
+   unusual punctuation could fall through to the next family
+   mid-word.
+
+   Neue Regrade, the previous sans, is deliberately NOT left in
+   the stack behind Aeonik. Keeping it there had the browser
+   fetch its 83 KB variable file on every load even though
+   Aeonik covers every glyph the site renders. Its @font-face
+   blocks stay below, unreferenced and therefore never fetched,
+   so switching back is a one-line change to --font-sans.
+
+   Advercase is the display face, used only for big titles.
+   All live under fonts/.
+   ========================================================= */
+
+@font-face {
+  font-family: "Aeonik Pro";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/ce50667cae3f791b-s.p.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Aeonik Pro";
+  font-style: normal;
+  font-weight: 500 900;
+  font-display: swap;
+  src: url("fonts/780d539306efdcf5-s.p.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("fonts/neue_regrade/Neue Regrade Variable.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade Regular Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade SemiBold Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Neue Regrade";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url("fonts/neue_regrade/Neue Regrade Bold Italic.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Advercase";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url("fonts/indieground-advercasefont-demo/Advercase-Font-Demo-Regular.otf")
+      format("opentype");
+}
+
+@font-face {
+  font-family: "Advercase";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    url("fonts/indieground-advercasefont-demo/Advercase-Font-Demo-Bold.otf")
+      format("opentype");
+}
+
 :root {
-  --bg: #f5f4ef;
-  --panel: rgba(255, 255, 255, 0.92);
-  --text: #151515;
-  --muted: #555;
-  --border: rgba(0, 0, 0, 0.15);
+  --font-sans:
+    "Aeonik Pro",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --font-display:
+    "Advercase",
+    "Aeonik Pro",
+    system-ui,
+    sans-serif;
+
+  --bg: light-dark(#f5f4ef, #07110f);
+  --panel: light-dark(rgba(255, 255, 255, 0.92), rgba(20, 24, 22, 0.9));
+  --text: light-dark(#151515, #f3f5f2);
+  --muted: light-dark(#555, #c4c8c4);
+  --border: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.18));
 
   --growth: #2ca25f;
   --decline: #e76f51;
@@ -19,11 +136,94 @@
   --signal-blue: #103f91;
   --signal-blue-soft: rgba(16, 63, 145, 0.1);
 
-  --glass-bg: rgba(255, 255, 255, 0.72);
-  --glass-bg-strong: rgba(255, 255, 255, 0.84);
-  --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
-  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --glass-bg: light-dark(rgba(255, 255, 255, 0.72), rgba(22, 27, 25, 0.72));
+  --glass-bg-strong: light-dark(rgba(255, 255, 255, 0.84), rgba(26, 31, 29, 0.88));
+  --glass-border: light-dark(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.16));
+  --glass-shadow: var(--elev-float);
+  --glass-inner: inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.16));
+
+  --splash-bg: light-dark(#f5f4ef, #07110f);
+  --splash-ink: light-dark(#1b2a12, #f4f8f2);
+  --splash-ink-soft: light-dark(#33402a, #eef3ec);
+  --splash-ink-fine: light-dark(#3b4634, #e8efe5);
+  --splash-ink-faint: light-dark(#5d6b52, #b7c6b1);
+  /* Sampled off the reference button: #fdf5e4 paper, #101010 ink.
+     Same pair in both themes - the button rests on paper and the
+     ink face wipes in diagonally, exactly as in the reference. */
+  --cta-rest-bg: #fdf5e4;
+  --cta-rest-ink: #101010;
+  --cta-hover-bg: #101010;
+  --cta-hover-ink: #fdf5e4;
+  --splash-scrim: light-dark(rgba(245, 244, 239, 0.55), rgba(5, 13, 12, 0.42));
+  --splash-map-grade: saturate(1.12);
+
+  --legend-hairline: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+
+  /* -------------------------------------------------------
+     Spacing scale and screen rails
+
+     Every floating element on the map sits on one of three
+     rails rather than carrying its own margin. Before this
+     existed the five panels used five different origins in
+     three unit systems - 16px, 17.6px and 64px from the left
+     alone - which is the most reliable tell there is that a
+     layout was never planned. Shared edges read as a grid
+     even when nobody can say why.
+
+     --rail-x/-y are the outer gutters. Everything anchored to
+     an edge uses them and nothing else.
+     ------------------------------------------------------- */
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --rail-x: clamp(var(--space-4), 3vw, var(--space-7));
+  --rail-y: clamp(var(--space-4), 3vh, var(--space-6));
+
+  /* The legend occupies the bottom rail; the story panel
+     stacks directly above it, so it needs the legend's height
+     to clear it rather than a hand-picked offset. */
+  --legend-h: 2.6rem;
+
+  /* -------------------------------------------------------
+     Radius and elevation scale
+
+     Was nine literal values across peer surfaces (0, 4.8,
+     5.6, 12, 13, 16, 20, 25.6px). Three tiers plus a pill is
+     a system that can be defended; nine arbitrary values is
+     noise the eye reads as carelessness.
+
+     --r-xs is reserved for the intro CTA alone, whose 4px is
+     already argued for from the reference button.
+     ------------------------------------------------------- */
+
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-full: 999px;
+
+  /* Two weights only. Resting chrome that sits ON the page
+     vs. surfaces that float ABOVE it - per the material rule
+     that bigger surfaces read as thicker. */
+  --elev-chrome: 0 4px 16px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.35));
+  --elev-float: 0 18px 45px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.42));
+
+  /* -------------------------------------------------------
+     Interaction
+
+     One press duration and one focus ring for the whole site.
+     ------------------------------------------------------- */
+
+  --press-scale: 0.96;
+  --press-time: 100ms;
+  --focus-ring: light-dark(#2ca25f, #6ee7a8);
 
   color-scheme: light;
 }
@@ -39,34 +239,44 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #07110f;
-  --panel: rgba(20, 24, 22, 0.9);
-  --text: #f3f5f2;
-  --muted: #c4c8c4;
-  --border: rgba(255, 255, 255, 0.18);
-
-  --glass-bg: rgba(22, 27, 25, 0.72);
-  --glass-bg-strong: rgba(26, 31, 29, 0.88);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-shadow: 0 22px 65px rgba(0, 0, 0, 0.42);
-  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  /* Only what light-dark() cannot express lives here. It resolves
+     colours off `color-scheme`, which every data-theme state above
+     already sets correctly, so all the colour tokens are declared
+     once on :root and need no mirror. This block is the remainder:
+     a filter, which is not a colour. */
+  --splash-map-grade: saturate(1.5) brightness(1.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="auto"] {
-    --bg: #07110f;
-    --panel: rgba(20, 24, 22, 0.9);
-    --text: #f3f5f2;
-    --muted: #c4c8c4;
-    --border: rgba(255, 255, 255, 0.18);
-
-    --glass-bg: rgba(22, 27, 25, 0.72);
-    --glass-bg-strong: rgba(26, 31, 29, 0.88);
-    --glass-border: rgba(255, 255, 255, 0.16);
-    --glass-shadow: 0 22px 65px rgba(0, 0, 0, 0.42);
-    --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    --splash-map-grade: saturate(1.5) brightness(1.3);
   }
 }
+
+/* =========================================================
+   Display-face tracking and leading
+
+   Tracking is size-specific: letters read too far apart as
+   they grow, so large text needs negative tracking and small
+   text needs none. Advercase was running at five sizes with
+   letter-spacing left at `normal` on three of them, which is
+   why the same face read as three different families across
+   the site.
+
+   Every --font-display heading carries the bracket matching
+   its rendered size. Body copy stays at 0 and is not listed.
+
+     >= 48px   -0.03em / 1.02   splash h1, takeaway h2
+     32-48px   -0.02em / 1.08   story h2, about h2
+     24-32px   -0.01em / 1.15   tour h2
+     < 24px         0  / 1.25   brand, splash legend title
+
+   The values live on the headings themselves rather than in
+   utility classes, because each heading's size is already a
+   clamp() defined at its own rule - splitting size from
+   tracking would put the two halves of one decision in two
+   places.
+   ========================================================= */
 
 * {
   box-sizing: border-box;
@@ -81,12 +291,9 @@ body {
   overflow: hidden;
   color: var(--text);
   background: var(--bg);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
@@ -95,146 +302,37 @@ select {
 }
 
 /* =========================================================
+   Film grain
+
+   One fixed layer over everything, generated by feTurbulence
+   rather than shipped as an image - it stays crisp at any
+   density and costs nothing to download. Static on purpose:
+   animating it would repaint the full viewport every frame on
+   top of a WebGL globe.
+
+   Kept very low: enough to break up the large flat gradients
+   in the intro and the map's ocean, not enough to notice
+   directly. `overlay` blending keeps blacks black instead of
+   laying a grey veil over them.
+   ========================================================= */
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='300'%20height='300'%3E%3Cfilter%20id='g'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.9'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='300'%20height='300'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* =========================================================
    Shared glass surfaces
    ========================================================= */
 
-.splash-card,
-.about-card,
-.tour-card,
-.story-panel p,
-.chart-panel {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--glass-border);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.82),
-      rgba(255, 255, 255, 0.42)
-    );
-  box-shadow:
-    var(--glass-shadow),
-    var(--glass-inner);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-}
-
-:root[data-theme="dark"] .splash-card,
-:root[data-theme="dark"] .about-card,
-:root[data-theme="dark"] .tour-card,
-:root[data-theme="dark"] .story-panel p,
-:root[data-theme="dark"] .chart-panel {
-  border-color: rgba(255, 255, 255, 0.18);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(25, 38, 40, 0.72),
-      rgba(9, 20, 24, 0.56)
-    );
-  box-shadow:
-    0 22px 65px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(34px) saturate(180%);
-  -webkit-backdrop-filter: blur(34px) saturate(180%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-card,
-  :root[data-theme="auto"] .about-card,
-  :root[data-theme="auto"] .tour-card,
-  :root[data-theme="auto"] .story-panel p,
-  :root[data-theme="auto"] .chart-panel {
-    border-color: rgba(255, 255, 255, 0.18);
-    background:
-      linear-gradient(
-        145deg,
-        rgba(25, 38, 40, 0.72),
-        rgba(9, 20, 24, 0.56)
-      );
-    box-shadow:
-      0 22px 65px rgba(0, 0, 0, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.22),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(34px) saturate(180%);
-    -webkit-backdrop-filter: blur(34px) saturate(180%);
-  }
-}
-
-.splash-card::before,
-.about-card::before,
-.tour-card::before,
-.chart-panel::before,
-.story-panel p::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      circle at 20% 8%,
-      rgba(255, 255, 255, 0.88),
-      transparent 24%
-    ),
-    radial-gradient(
-      circle at 92% 100%,
-      rgba(44, 162, 95, 0.13),
-      transparent 32%
-    ),
-    linear-gradient(
-      160deg,
-      rgba(255, 255, 255, 0.28),
-      transparent 46%
-    );
-  opacity: 0.62;
-}
-
-.story-panel p::before {
-  opacity: 0.28;
-}
-
-:root[data-theme="dark"] .splash-card::before,
-:root[data-theme="dark"] .about-card::before,
-:root[data-theme="dark"] .tour-card::before,
-:root[data-theme="dark"] .chart-panel::before,
-:root[data-theme="dark"] .story-panel p::before {
-  opacity: 0.18;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-card::before,
-  :root[data-theme="auto"] .about-card::before,
-  :root[data-theme="auto"] .tour-card::before,
-  :root[data-theme="auto"] .chart-panel::before,
-  :root[data-theme="auto"] .story-panel p::before {
-    opacity: 0.18;
-  }
-}
-
-.splash-card > *,
-.about-card > *,
-.tour-card > *,
-.chart-panel > *,
-.story-panel p > * {
-  position: relative;
-  z-index: 1;
-}
-
-.compare-tab,
-.region-jump select,
-.theme-switcher select,
-.start-button,
-.tour-primary-button,
-.tour-secondary-button,
-.mobile-chart-toggle,
-.about-button,
-.chart-close-button,
-.about-close-button,
-.legend-chip,
-.takeaway-primary-button,
-.takeaway-secondary-button,
-.takeaway-close-button {
+.chart-close-button {
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
@@ -244,19 +342,12 @@ select {
    ========================================================= */
 
 :root[data-theme="dark"] .story-panel h2,
-:root[data-theme="dark"] .about-card h2,
-:root[data-theme="dark"] .about-card h3,
-:root[data-theme="dark"] .tour-card h2,
 :root[data-theme="dark"] .chart-panel h3,
 :root[data-theme="dark"] .brand strong,
 :root[data-theme="dark"] .map-legend-row {
   color: var(--text);
 }
 
-:root[data-theme="dark"] .splash-card p,
-:root[data-theme="dark"] .about-card p,
-:root[data-theme="dark"] .tour-card p,
-:root[data-theme="dark"] .story-panel p,
 :root[data-theme="dark"] .mini-chart-label,
 :root[data-theme="dark"] #chart-caption,
 :root[data-theme="dark"] .change-box span,
@@ -266,19 +357,12 @@ select {
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="auto"] .story-panel h2,
-  :root[data-theme="auto"] .about-card h2,
-  :root[data-theme="auto"] .about-card h3,
-  :root[data-theme="auto"] .tour-card h2,
   :root[data-theme="auto"] .chart-panel h3,
   :root[data-theme="auto"] .brand strong,
   :root[data-theme="auto"] .map-legend-row {
     color: var(--text);
   }
 
-  :root[data-theme="auto"] .splash-card p,
-  :root[data-theme="auto"] .about-card p,
-  :root[data-theme="auto"] .tour-card p,
-  :root[data-theme="auto"] .story-panel p,
   :root[data-theme="auto"] .mini-chart-label,
   :root[data-theme="auto"] #chart-caption,
   :root[data-theme="auto"] .change-box span,
@@ -289,39 +373,33 @@ select {
 
 /* =========================================================
    Splash screen
+
+   Three stages, driven by data-stage on #splash-screen:
+   0 = hero only, 1 = hero plus detail, 2 = globe reveal and
+   handoff to the guided tour.
+
+   Stage changes are CSS transitions rather than keyframes, so
+   a click that lands mid-animation retargets instead of
+   restarting. The one-shot page-load entrance is the only
+   keyframe here.
    ========================================================= */
 
 .splash-screen {
+  --splash-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --splash-ease-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Long, hard deceleration - the detail block opens fast and
+     settles slowly, which is what makes the expansion read. */
+  --splash-expand: cubic-bezier(0.16, 1, 0.3, 1);
+
   position: fixed;
   inset: 0;
   z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  overflow-y: auto;
-  background:
-    radial-gradient(
-      circle at 18% 18%,
-      rgba(44, 162, 95, 0.2),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 82% 72%,
-      rgba(231, 111, 81, 0.16),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 72% 20%,
-      rgba(16, 63, 145, 0.08),
-      transparent 28%
-    ),
-    rgba(245, 244, 239, 0.88);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  overflow: hidden;
+  color: var(--splash-ink);
   transition:
-    opacity 0.55s ease,
-    visibility 0.55s ease;
+    opacity 0.75s ease,
+    visibility 0.75s ease;
 }
 
 .splash-screen.hidden {
@@ -330,295 +408,556 @@ select {
   pointer-events: none;
 }
 
-:root[data-theme="dark"] .splash-screen {
-  background:
-    radial-gradient(
-      circle at 18% 18%,
-      rgba(44, 162, 95, 0.18),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 82% 72%,
-      rgba(231, 111, 81, 0.12),
-      transparent 30%
-    ),
-    radial-gradient(
-      circle at 72% 20%,
-      rgba(16, 63, 145, 0.12),
-      transparent 28%
-    ),
-    rgba(16, 19, 18, 0.94);
+/* =========================================================
+   The real globe as the backdrop
+
+   #single-map is already sitting behind the splash with the
+   2025 layer on it, so the intro blurs that map rather than
+   drawing a fake globe over it. The blur lifts at stage 2,
+   which *is* the reveal — nothing is swapped or crossfaded.
+
+   The map is scaled up slightly while blurred so the soft
+   edge a blur leaves behind is pushed off screen; settling
+   back to 1 gives the reveal its forward motion.
+   ========================================================= */
+
+body:has(.splash-screen:not([data-stage="2"])) #single-map {
+  /* Dark mode grades the blurred globe up as well as blurring
+     it — the dark ocean is near black, so without the lift the
+     backdrop reads as an empty panel rather than a planet. */
+  filter: blur(38px) var(--splash-map-grade);
+  scale: 1.12;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-screen {
-    background:
-      radial-gradient(
-        circle at 18% 18%,
-        rgba(44, 162, 95, 0.18),
-        transparent 34%
-      ),
-      radial-gradient(
-        circle at 82% 72%,
-        rgba(231, 111, 81, 0.12),
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 72% 20%,
-        rgba(16, 63, 145, 0.12),
-        transparent 28%
-      ),
-      rgba(16, 19, 18, 0.94);
-  }
+/* The opacity/visibility pair is the compare-mode crossfade,
+   declared here as well because this rule would otherwise
+   override the shared one below it. Transitioning visibility
+   is what holds the outgoing container on screen for the
+   length of its own fade instead of cutting it at frame one. */
+
+#single-map {
+  transition:
+    filter 1.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+    scale 1.4s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.34s ease,
+    visibility 0.34s ease;
 }
 
-.splash-card {
-  width: min(760px, 100%);
-  max-height: calc(100vh - 2rem);
-  padding: clamp(1.5rem, 4vw, 3rem);
-  overflow-y: auto;
-  border-radius: 1.6rem;
-  text-align: left;
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(44, 162, 95, 0.16),
-      transparent 36%
-    ),
-    radial-gradient(
-      circle at bottom right,
-      rgba(231, 111, 81, 0.12),
-      transparent 38%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.96),
-      rgba(248, 249, 246, 0.88)
-    );
+/* Every other layer would otherwise show through the scrim as
+   unblurred chrome floating over the intro. */
+
+body:has(.splash-screen) .top-ui,
+body:has(.splash-screen) .map-stage > *:not(#single-map),
+body:has(.splash-screen) .mapboxgl-control-container {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.splash-kicker {
-  margin: 0 0 0.75rem;
-  color: #5d5d5d;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.splash-card h1 {
-  margin: 0 0 1rem;
-  color: var(--text);
-  font-size: clamp(2.3rem, 6vw, 4.5rem);
-  line-height: 0.95;
-}
-
-.splash-card > p {
-  max-width: 680px;
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(0.92rem, 1.35vw, 1.1rem);
-  line-height: 1.65;
-}
-
-:root[data-theme="dark"] .splash-kicker {
-  color: #b8beb9;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-kicker {
-    color: #b8beb9;
-  }
+.top-ui,
+.mapboxgl-control-container {
+  transition: opacity 0.7s ease 0.2s;
 }
 
 /* =========================================================
-   Splash explanation
+   Scrim
+
+   Tints the blurred map so the copy has something to sit on:
+   light wash in light mode, dark wash in dark mode. Stage 0
+   runs it slightly weaker (less text to carry), stage 2 takes
+   it to nothing as the map sharpens.
    ========================================================= */
 
-.splash-explanation {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-top: 1.25rem;
+.splash-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--splash-scrim);
+  opacity: 0.85;
+  pointer-events: none;
+  transition: opacity 0.9s var(--splash-ease);
 }
 
-.splash-explanation-item {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.56);
-  border-radius: 1rem;
+.splash-screen[data-stage="1"] .splash-scrim {
+  opacity: 1;
+}
+
+.splash-screen[data-stage="2"] .splash-scrim {
+  opacity: 0;
+  transition: opacity 0.7s ease-in;
+}
+
+/* =========================================================
+   Globe stand-in
+
+   Only there for the seconds before the map has drawn, so the
+   intro never opens on a flat panel. data-map-ready is set the
+   moment the maps report in, and this crossfades away to the
+   real thing underneath.
+   ========================================================= */
+
+.splash-globe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 92vh;
+  height: 92vh;
+  border-radius: 50%;
+  opacity: 0.92;
+  translate: -50% -50%;
+  rotate: -12deg;
+  filter: blur(42px) saturate(1.15);
+  pointer-events: none;
+  transition: opacity 1.2s ease;
+}
+
+.splash-screen[data-map-ready="true"] .splash-globe {
+  opacity: 0;
+}
+
+.splash-globe-body,
+.splash-globe-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.splash-globe-body {
   background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.6),
-      rgba(255, 255, 255, 0.28)
+    radial-gradient(
+      circle at 30% 26%,
+      #cfe3a6 0%,
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 52% 18%,
+      #efe7d3 0%,
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 62% 34%,
+      #103f91 0%,
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 40% 46%,
+      #0d3b3a 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 70% 56%,
+      #0f3f3c 0%,
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 46% 66%,
+      #4fb66f 0%,
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 78% 74%,
+      #159978 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 26% 72%,
+      #006f7f 0%,
+      transparent 20%
+    ),
+    radial-gradient(
+      circle at 58% 88%,
+      #73cb8d 0%,
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      #2ca25f 0%,
+      #14705c 62%,
+      #0b3f43 100%
     );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.66),
-    0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
-.splash-explanation-item strong {
-  color: var(--text);
-  font-size: 0.9rem;
-}
-
-.splash-explanation-item span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.45;
-}
-
-:root[data-theme="dark"] .splash-explanation-item {
-  border-color: rgba(255, 255, 255, 0.13);
+.splash-globe-sheen {
   background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.035)
+    radial-gradient(
+      circle at 34% 26%,
+      rgba(255, 255, 255, 0.4),
+      transparent 42%
     );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .splash-explanation-item {
-    border-color: rgba(255, 255, 255, 0.13);
-    background:
-      linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.035)
-      );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 10px 24px rgba(0, 0, 0, 0.18);
+/* =========================================================
+   Splash copy
+   ========================================================= */
+
+.splash-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  /* "safe" keeps the top of the copy reachable when it
+     overflows a short viewport; older browsers keep "center". */
+  justify-content: safe center;
+
+  padding:
+    clamp(1.75rem, 4vh, 5rem)
+    clamp(1.25rem, 5vw, 4rem);
+  overflow-y: auto;
+
+  /* The gutter is reserved even when nothing overflows. Without
+     it a classic scrollbar appears only at stage 1, narrowing
+     this box by ~15px *after* splitDetailIntoLines() has already
+     measured where the lines break - so every captured line was
+     then a few px too wide and re-wrapped, orphaning its last
+     word or two onto a line of its own. "both-edges" keeps the
+     centred column symmetric. */
+  scrollbar-gutter: stable both-edges;
+
+  text-align: center;
+}
+
+/* One-shot page-load entrance. Each chunk of the hero rises
+   on its own ~90 ms behind the last; "backwards" holds the
+   offset during the delay and then hands the element back to
+   its own styles, so hover and press states still work. */
+
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+    filter: blur(6px);
   }
+}
+
+.splash-rise {
+  animation: splash-rise 0.7s var(--splash-ease-out) backwards;
+}
+
+.splash-screen h1 .splash-rise {
+  display: block;
+}
+
+.splash-rise--1 {
+  animation-delay: 0.05s;
+}
+
+.splash-rise--2 {
+  animation-delay: 0.14s;
+}
+
+.splash-rise--3 {
+  animation-delay: 0.26s;
+}
+
+.splash-rise--4 {
+  animation-delay: 0.4s;
+}
+
+.splash-hero {
+  transition:
+    opacity 0.7s var(--splash-ease),
+    translate 0.9s var(--splash-expand),
+    scale 0.9s var(--splash-expand);
+}
+
+.splash-screen[data-stage="1"] .splash-hero {
+  scale: 0.84;
+}
+
+/* Exits stay shorter and shallower than enters. */
+
+.splash-screen[data-stage="2"] .splash-hero {
+  opacity: 0;
+  translate: 0 -14px;
+  scale: 0.92;
+  pointer-events: none;
+  transition:
+    opacity 0.28s ease-in,
+    translate 0.28s ease-in,
+    scale 0.28s ease-in;
+}
+
+.splash-screen h1 {
+  margin: 0;
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 7.8vw, 6.8rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+/* Both lines are the display face now, so they run at one size
+   and read as a single title. */
+
+.splash-title-accent {
+  display: block;
+}
+
+.splash-tagline {
+  max-width: 34ch;
+  margin: clamp(1.1rem, 3vh, 3rem) auto 0;
+  color: var(--splash-ink-soft);
+  font-size: clamp(1rem, 1.6vw, 1.45rem);
+  font-weight: 600;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+/* The detail block opens by animating grid-template-rows from
+   0fr to 1fr, which gives an exact content height without the
+   guessed max-height the old version eased against. */
+
+.splash-detail {
+  /* The paragraph and the legend card sit on one column edge,
+     so both read against the same measure. */
+  --splash-measure: min(600px, 100%);
+
+  display: grid;
+  grid-template-rows: 0fr;
+  width: var(--splash-measure);
+  margin-top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    grid-template-rows 0.9s var(--splash-expand),
+    margin-top 0.9s var(--splash-expand),
+    opacity 0.4s ease;
+}
+
+.splash-detail-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Stage 2 keeps the block open and lets it fade upward, so the
+   exit is a soft lift rather than a collapse. The hero above it
+   has already shrunk by ~16%, which is why the stage-1 gap here
+   is small — the scaled-down hero leaves its own breathing room. */
+
+.splash-screen[data-stage="1"] .splash-detail,
+.splash-screen[data-stage="2"] .splash-detail {
+  grid-template-rows: 1fr;
+  margin-top: clamp(1.35rem, 3.5vh, 4rem);
+}
+
+.splash-screen[data-stage="1"] .splash-detail {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.splash-screen[data-stage="2"] .splash-detail {
+  opacity: 0;
+  translate: 0 -12px;
+  transition:
+    opacity 0.2s ease-in,
+    translate 0.2s ease-in;
+}
+
+/* Contents of the detail block arrive in their own beats
+   rather than as one slab. */
+
+.splash-reveal {
+  opacity: 0;
+  translate: 0 16px;
+  filter: blur(6px);
+  transition:
+    opacity 0.5s var(--splash-ease-out),
+    translate 0.6s var(--splash-ease-out),
+    filter 0.5s var(--splash-ease-out);
+}
+
+.splash-screen[data-stage="1"] .splash-reveal,
+.splash-screen[data-stage="2"] .splash-reveal {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+.splash-screen[data-stage="1"] .splash-reveal--1 {
+  transition-delay: 0.46s;
+}
+
+.splash-detail-text {
+  max-width: var(--splash-measure);
+  margin: 0 auto;
+  color: var(--splash-ink-fine);
+  font-size: clamp(0.92rem, 1.1vw, 1.04rem);
+  font-weight: 600;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.splash-detail-text + .splash-detail-text {
+  margin-top: 1.6em;
+}
+
+/* splitDetailIntoLines() in main.js rewraps the paragraph one
+   rendered line per .splash-line, so each line can slide up out
+   of its own mask. The padding/margin pair keeps descenders from
+   being clipped by that mask. */
+
+.splash-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.splash-line-inner {
+  display: block;
+
+  /* Cancels the paragraph's text-wrap: pretty. Each of these
+     holds one already-measured line, and `pretty` re-balances a
+     block to avoid short last lines - which on a single-line
+     block means splitting it into two. */
+  text-wrap: wrap;
+
+  translate: 0 110%;
+  transition: translate 0.75s var(--splash-expand);
+}
+
+.splash-screen[data-stage="1"] .splash-line-inner,
+.splash-screen[data-stage="2"] .splash-line-inner {
+  translate: 0 0;
+}
+
+.splash-cta {
+  margin-top: clamp(1.85rem, 5vh, 6rem);
+  transition:
+    opacity 0.5s var(--splash-ease),
+    translate 0.6s var(--splash-ease);
+}
+
+.splash-screen[data-stage="2"] .splash-cta {
+  opacity: 0;
+  translate: 0 12px;
+  pointer-events: none;
+  transition:
+    opacity 0.24s ease-in,
+    translate 0.24s ease-in;
 }
 
 /* =========================================================
    Splash legend
+
+   No card - the intro is one centred editorial column and a
+   boxed panel fought it. Both keys are presented as the same
+   object, a labelled bar, so they read as one system:
+
+   - NDVI is a continuous ramp, and its stops mirror
+     getSpikePaint() in main.js exactly.
+   - Change is a hard two-tone split, because getChangePaint()
+     is binary - growth green, decline orange, with height
+     carrying the magnitude.
    ========================================================= */
 
 .splash-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.7rem;
-  margin: 1.35rem 0;
+  width: var(--splash-measure);
+  margin: clamp(2rem, 5vh, 6rem) auto 0;
 }
 
-.legend-chip {
-  display: inline-flex;
+/* Set in the display face like the title above it. Dropping the
+   uppercase tracking with it: letterspaced small caps is what
+   made this line hard to read in the first place. */
+
+.splash-legend-title {
+  margin: 0 0 clamp(1.05rem, 2.5vh, 2.4rem);
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+/* Both bars share one grid so their ends line up and the two
+   scales read as a pair rather than two stray rows. */
+
+.legend-scales {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 999px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
-  font-size: 0.87rem;
-  line-height: 1.2;
+  gap: 1.05rem 1.4rem;
 }
 
-.legend-chip--intensity {
-  color: #2f3a35;
+/* One ink for every label here - the bars already carry the
+   colour coding, so tinting the words too was saying it twice. */
+
+.legend-cap {
+  color: var(--splash-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.legend-chip--lower {
+.legend-bar {
+  height: 0.68rem;
+  border-radius: var(--r-full);
+  box-shadow: inset 0 0 0 1px var(--legend-hairline);
+
+  /* Wipes open left to right on arrival. Clipping rather than
+     scaling keeps the gradient true - a scaleX would drag the
+     colour stops along with the growth. */
+  clip-path: inset(0 100% 0 0 round 999px);
+  transition: clip-path 1s var(--splash-expand);
+}
+
+.splash-screen[data-stage="1"] .legend-bar,
+.splash-screen[data-stage="2"] .legend-bar {
+  clip-path: inset(0 0 0 0 round 999px);
+}
+
+.splash-screen[data-stage="1"] .legend-bar--ndvi {
+  transition-delay: 0.58s;
+}
+
+.splash-screen[data-stage="1"] .legend-bar--change {
+  transition-delay: 0.72s;
+}
+
+.legend-bar--ndvi {
   background:
     linear-gradient(
-      135deg,
-      rgba(239, 231, 211, 0.5),
-      rgba(200, 209, 143, 0.2)
-    );
-}
-
-.legend-chip--higher {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(21, 153, 120, 0.17),
-      rgba(16, 63, 145, 0.13)
-    );
-}
-
-.legend-chip--growth {
-  color: var(--growth-green-dark);
-  background: rgba(44, 162, 95, 0.13);
-}
-
-.legend-chip--decline {
-  color: var(--decline-orange-dark);
-  background: rgba(231, 111, 81, 0.13);
-}
-
-.legend-chip--height {
-  color: #36516f;
-  background: rgba(16, 63, 145, 0.08);
-}
-
-.legend-gradient-preview {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex: 0 0 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 999px;
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.04),
-    0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.legend-gradient-preview--lower {
-  background:
-    linear-gradient(
-      135deg,
+      90deg,
       #efe7d3 0%,
-      #dccca3 42%,
-      #c8d18f 100%
-    );
-}
-
-.legend-gradient-preview--high {
-  background:
-    linear-gradient(
-      135deg,
-      #4fb66f 0%,
-      #159978 45%,
-      #006f7f 72%,
+      #dccca3 10%,
+      #c8d18f 22%,
+      #96c975 38%,
+      #4fb66f 55%,
+      #159978 72%,
+      #006f7f 88%,
       #103f91 100%
     );
 }
 
-.legend-label-lower {
-  color: #8a7b3f;
-  font-weight: 750;
+.legend-bar--change {
+  background:
+    linear-gradient(
+      90deg,
+      var(--decline-orange) 0 50%,
+      var(--growth-green) 50% 100%
+    );
 }
 
-.legend-label-higher {
-  color: #087b7c;
-  font-weight: 750;
+.legend-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: clamp(1.05rem, 2.5vh, 2.4rem) 0 0;
+  color: var(--splash-ink);
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
-.legend-dot {
-  width: 0.72rem;
-  height: 0.72rem;
-  flex: 0 0 0.72rem;
-  border-radius: 50%;
-}
-
-.legend-dot--growth {
-  background: var(--growth-green);
-  box-shadow: 0 0 0 4px rgba(44, 162, 95, 0.13);
-}
-
-.legend-dot--decline {
-  background: var(--decline-orange);
-  box-shadow: 0 0 0 4px rgba(231, 111, 81, 0.13);
-}
-
-.legend-dot--height {
-  border-radius: 0.25rem;
+.legend-spike {
+  width: 0.38rem;
+  height: 1.05rem;
+  flex: 0 0 0.38rem;
+  border-radius: var(--r-xs);
   background:
     linear-gradient(
       180deg,
@@ -626,83 +965,380 @@ select {
       #159978 55%,
       #103f91 100%
     );
-  box-shadow: 0 0 0 4px rgba(16, 63, 145, 0.09);
 }
 
-:root[data-theme="dark"] .legend-chip--intensity,
-:root[data-theme="dark"] .legend-chip--growth,
-:root[data-theme="dark"] .legend-chip--decline,
-:root[data-theme="dark"] .legend-chip--height {
-  color: var(--text);
-}
+/* =========================================================
+   Sweep buttons
 
-:root[data-theme="dark"] .legend-label-lower {
-  color: #e6d78c;
-}
+   The intro's CTA, generalised. Reserved for the buttons that
+   commit to something - start, continue, advance the tour, open
+   the regional chart - not the top bar, which is chrome floating
+   over the map rather than an action taken on it. Reusing
+   .start-button-face/.start-button-label rather than inventing
+   per-button names is what lets the wipe read as the same
+   object everywhere it appears.
+   ========================================================= */
 
-:root[data-theme="dark"] .legend-label-higher {
-  color: #6ed0c9;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .legend-chip--intensity,
-  :root[data-theme="auto"] .legend-chip--growth,
-  :root[data-theme="auto"] .legend-chip--decline,
-  :root[data-theme="auto"] .legend-chip--height {
-    color: var(--text);
-  }
-
-  :root[data-theme="auto"] .legend-label-lower {
-    color: #e6d78c;
-  }
-
-  :root[data-theme="auto"] .legend-label-higher {
-    color: #6ed0c9;
-  }
-}
-
-.start-button {
-  padding: 0.85rem 1.3rem;
+.start-button,
+.takeaway-primary-button,
+.mobile-chart-toggle,
+.tour-primary-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   border: 0;
-  border-radius: 999px;
-  color: white;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(17, 17, 17, 0.94),
-      rgba(17, 17, 17, 0.76)
-    );
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+
+  /* The reference button carries an 8px radius at 2x on a 104px
+     tall face - the same proportion as 4px on this one. */
+  border-radius: var(--r-xs);
+  color: var(--cta-rest-ink);
+  background: var(--cta-rest-bg);
+  box-shadow:
+    0 1px 2px rgba(12, 14, 10, 0.16),
+    0 10px 24px -10px rgba(12, 14, 10, 0.28),
+    0 24px 48px -26px rgba(12, 14, 10, 0.32);
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    scale 0.15s ease-out,
+    box-shadow 0.25s ease,
+    opacity 0.2s ease;
 }
 
-.start-button:hover {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(44, 162, 95, 0.96),
-      rgba(31, 126, 74, 0.78)
-    );
+/* Only the two full-size CTAs carry this measure; every other
+   sweep button keeps the padding/size it already had. */
+
+.start-button,
+.takeaway-primary-button {
+  min-height: 3.25rem;
+  padding: 1.05rem 2.6rem;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+}
+
+.start-button:active:not(:disabled),
+.takeaway-primary-button:active {
+  scale: var(--press-scale);
 }
 
 .start-button:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: progress;
 }
 
+/* The inverted face is a full second copy of the button stacked
+   on the first. Only its clip moves, so the label itself splits
+   along the diagonal instead of sliding - letters caught on the
+   edge are half one colour and half the other.
+
+   The polygon is the half-plane below-left of a line running
+   from (x, 0) to (x + 150%, 100%). At rest that line sits just
+   past the bottom-left corner; on hover just past the top-right.
+   Same four points in the same order in both states, which is
+   what lets clip-path interpolate at all. */
+
+.start-button-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cta-hover-ink);
+  background: var(--cta-hover-bg);
+  clip-path: polygon(-150% 0%, 0% 100%, -300% 100%, -300% 0%);
+  transition: clip-path 0.55s var(--splash-expand);
+}
+
+.start-button:hover:not(:disabled) .start-button-face,
+.start-button:focus-visible:not(:disabled) .start-button-face,
+.takeaway-primary-button:hover .start-button-face,
+.takeaway-primary-button:focus-visible .start-button-face,
+.tour-primary-button:hover .start-button-face,
+.tour-primary-button:focus-visible .start-button-face {
+  clip-path: polygon(100% 0%, 250% 100%, -300% 100%, -300% 0%);
+}
+
+/* The label is centred on the button; the spinner rides in the
+   left padding so showing it never nudges the text. */
+
+.start-button-spinner {
+  position: absolute;
+  top: 50%;
+  left: 1.15rem;
+  z-index: 1;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid rgba(127, 127, 127, 0.4);
+  border-top-color: var(--cta-rest-ink);
+  border-radius: 50%;
+  opacity: 0;
+  translate: 0 -50%;
+  scale: 0.25;
+  filter: blur(4px);
+  pointer-events: none;
+  transition:
+    opacity 0.3s var(--splash-ease-out),
+    scale 0.3s var(--splash-ease-out),
+    filter 0.3s var(--splash-ease-out);
+}
+
+.start-button:disabled .start-button-spinner {
+  opacity: 1;
+  scale: 1;
+  filter: blur(0);
+  animation: splash-spin 0.7s linear infinite;
+}
+
+@keyframes splash-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Stage 0 carries the load message under the button. From
+   stage 1 on it stays a live region for screen readers but
+   leaves the layout, so the CTA reads as a single object. */
+
 .loading-status {
-  margin-top: 0.9rem !important;
-  color: var(--muted);
-  font-size: 0.8rem !important;
+  height: 1.1rem;
+  margin: 1rem 0 0;
+  color: var(--splash-ink-faint);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.splash-screen[data-stage="1"] .loading-status,
+.splash-screen[data-stage="2"] .loading-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The stage-1 column - hero, two paragraphs, legend, CTA -
+   outgrows a short viewport, and it was the primary button
+   that fell off the bottom: at 720px tall it sat at y=685-738,
+   entirely below the fold, immediately after the user's first
+   click. The gaps are the only compressible part, so they
+   give up their upper clamp here. */
+
+@media (max-height: 900px) {
+  .splash-content {
+    padding-top: clamp(1rem, 2vh, 2rem);
+    padding-bottom: clamp(1rem, 2vh, 2rem);
+  }
+
+  .splash-tagline {
+    margin-top: clamp(0.7rem, 1.6vh, 1.25rem);
+  }
+
+  /* The hero has already made its point by stage 1; it can
+     give up more room than the copy below it can. */
+
+  .splash-screen[data-stage="1"] .splash-hero {
+    scale: 0.76;
+  }
+
+  .splash-screen[data-stage="1"] .splash-detail,
+  .splash-screen[data-stage="2"] .splash-detail {
+    margin-top: clamp(0.5rem, 1.2vh, 1.1rem);
+  }
+
+  .splash-detail-text {
+    line-height: 1.5;
+  }
+
+  .splash-detail-text + .splash-detail-text {
+    margin-top: 0.85em;
+  }
+
+  .splash-legend {
+    margin-top: clamp(0.9rem, 2vh, 1.5rem);
+  }
+
+  .splash-legend-title {
+    margin-bottom: clamp(0.6rem, 1.2vh, 0.9rem);
+  }
+
+  .legend-scales {
+    gap: 0.7rem 1.4rem;
+  }
+
+  .legend-note {
+    margin-top: clamp(0.6rem, 1.2vh, 0.9rem);
+  }
+
+  .splash-cta {
+    margin-top: clamp(0.9rem, 2vh, 1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen,
+  .splash-globe,
+  .splash-scrim,
+  #single-map,
+  .top-ui,
+  .mapboxgl-control-container,
+  .splash-hero,
+  .splash-detail,
+  .splash-reveal,
+  .splash-rise,
+  .splash-line-inner,
+  .start-button-face,
+  .legend-bar,
+  .splash-cta,
+  .start-button,
+  .start-button-spinner {
+    /* The stagger delays are set by stage selectors that outrank
+       this block, so they need the override. */
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  /* A static ring still reads as "busy" next to a disabled
+     button, so nothing is lost by stopping the rotation. */
+
+  .start-button:disabled .start-button-spinner {
+    animation: none;
+  }
+}
+
+/* =========================================================
+   Interaction states
+
+   Response is the floor everything else is built on: a
+   control that does not react the instant it is pressed
+   reads as dead no matter how it is styled. Before this
+   block the whole stylesheet held exactly one :active rule
+   and one :focus-visible rule - both on the intro's own
+   button - so every control in the app was inert to the
+   touch and invisible to the keyboard.
+
+   Feedback lives on the press, not the release. The scale is
+   small on purpose: it should register as the surface taking
+   the push, not as an animation.
+   ========================================================= */
+
+.compare-tab,
+.region-trigger,
+.region-option,
+.theme-toggle,
+.compare-year-option,
+.tour-primary-button,
+.tour-secondary-button,
+.takeaway-primary-button,
+.takeaway-secondary-button,
+.about-button,
+.mobile-chart-toggle,
+.chart-close-button,
+.about-close-button,
+.takeaway-close-button,
+.start-button {
+  transition:
+    background-color 160ms ease-out,
+    color 160ms ease-out,
+    box-shadow 200ms ease,
+    opacity 160ms ease-out,
+    scale var(--press-time) ease-out;
+}
+
+.theme-toggle:active,
+.compare-year-option:active,
+.tour-primary-button:active,
+.tour-secondary-button:active,
+.takeaway-primary-button:active,
+.takeaway-secondary-button:active,
+.about-button:active,
+.mobile-chart-toggle:active,
+.chart-close-button:active,
+.about-close-button:active,
+.takeaway-close-button:active {
+  scale: var(--press-scale);
+}
+
+/* Plain text has no surface to scale down, so these darken on
+   press instead - the same feedback the underlined secondary
+   buttons use. */
+
+.compare-tab:active,
+.region-trigger:active,
+.region-option:active {
+  scale: 1;
+  filter: brightness(0.75);
+}
+
+/* One ring for the whole site. :focus-visible rather than
+   :focus so a mouse press never draws it. */
+
+.compare-tab:focus-visible,
+.region-trigger:focus-visible,
+.region-option:focus-visible,
+.theme-toggle:focus-visible,
+.compare-year-option:focus-visible,
+.tour-primary-button:focus-visible,
+.tour-secondary-button:focus-visible,
+.takeaway-primary-button:focus-visible,
+.takeaway-secondary-button:focus-visible,
+.about-button:focus-visible,
+.mobile-chart-toggle:focus-visible,
+.chart-close-button:focus-visible,
+.about-close-button:focus-visible,
+.takeaway-close-button:focus-visible,
+.start-button:focus-visible,
+.about-card a:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle:active,
+  .compare-year-option:active,
+  .tour-primary-button:active,
+  .tour-secondary-button:active,
+  .takeaway-primary-button:active,
+  .takeaway-secondary-button:active,
+  .about-button:active,
+  .mobile-chart-toggle:active,
+  .chart-close-button:active,
+  .about-close-button:active,
+  .takeaway-close-button:active {
+    scale: 1;
+  }
 }
 
 /* =========================================================
    Header and controls
+
+   Brand, mode tabs and the region jump used to be chrome - a
+   chip button, an opaque tab bar, a boxed select - bolted onto
+   the top of the map. Every other overlay on the map (the story
+   panel, the legend, the compare switch) speaks a different
+   language: no boxes, just text lifted off the globe. This
+   brings the top bar into that language. The one concession is
+   .top-ui::before, a single very soft gradient wash standing in
+   for every box this used to need, so the text stays readable
+   over whatever the globe is doing underneath it.
    ========================================================= */
 
 .top-ui {
+  /* --splash-expand lives on .splash-screen, not :root, and
+     .takeaway-overlay already has to redefine it locally for the
+     same reason - it is scoped to whichever subtree actually
+     uses it. The underline and the region arrow need the same
+     curve, so the top bar gets its own copy too. */
+  --splash-expand: cubic-bezier(0.16, 1, 0.3, 1);
+
   position: fixed;
   top: 0;
   left: 0;
@@ -712,8 +1348,29 @@ select {
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
-  padding: 0 1rem;
+
+  /* Sets the left rail for .brand and the right rail for
+     .region-jump in one declaration. */
+  padding: 0 var(--rail-x);
   pointer-events: none;
+}
+
+.top-ui::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  height: clamp(6rem, 15vh, 10rem);
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      light-dark(rgba(245, 244, 239, 0.42), rgba(4, 12, 11, 0.46)) 0%,
+      light-dark(rgba(245, 244, 239, 0.16), rgba(4, 12, 11, 0.18)) 55%,
+      transparent 100%
+    );
 }
 
 .brand {
@@ -725,89 +1382,122 @@ select {
 
 .brand strong {
   display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: clamp(0.95rem, 1.1vw, 1.15rem);
-  line-height: 1.1;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-shadow: 0 1px 3px light-dark(rgba(245, 244, 239, 0.85), rgba(0, 0, 0, 0.5));
 }
 
-.about-button {
-  display: block;
-  margin-top: 0.3rem;
+/* About and the theme toggle are quiet text, same weight as the
+   region label beside them - one opens prose, the other cycles a
+   preference, neither is an action worth a button's worth of
+   attention next to the wordmark. */
+
+.about-button,
+.theme-toggle {
   padding: 0;
   border: 0;
-  color: #444;
-  background: transparent;
+  border-radius: 0;
+  color: var(--muted);
+  background: none;
+  box-shadow: none;
   font: inherit;
-  font-size: clamp(0.65rem, 0.8vw, 0.75rem);
-  text-align: left;
+  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  text-shadow: 0 1px 3px light-dark(rgba(245, 244, 239, 0.85), rgba(0, 0, 0, 0.5));
   cursor: pointer;
 }
 
-.about-button:hover {
-  color: var(--growth-green);
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.about-button:hover,
+.about-button:focus-visible {
+  color: var(--text);
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.24em;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  color: var(--text);
 }
 
 .compare-tabs {
   display: flex;
   flex: 0 1 auto;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
-  border-radius: 0 0 1rem 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  gap: clamp(1.5rem, 4vw, 3.25rem);
+  padding-top: 0.85rem;
   pointer-events: auto;
 }
 
+/* No fill any more - the selected tab is the one holding full
+   ink and the rule under its title, the same "a stroke of colour
+   says which one" language the takeaway's three points use. */
+
 .compare-tab {
-  min-width: clamp(130px, 12vw, 185px);
+  min-width: 0;
   margin: 0;
-  padding:
-    clamp(0.55rem, 0.9vw, 0.85rem)
-    clamp(0.45rem, 1vw, 1rem);
+  padding: 0;
   border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 0;
-  color: #111;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.72),
-      rgba(255, 255, 255, 0.36)
-    );
+  background: none;
+  color: var(--muted);
   font: inherit;
-  font-size: clamp(0.72rem, 0.95vw, 1rem);
-  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 1px 3px light-dark(rgba(245, 244, 239, 0.85), rgba(0, 0, 0, 0.5));
   cursor: pointer;
 }
 
-.compare-tab:last-child {
-  border-right: 0;
-}
-
 .compare-tab:hover {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.9),
-      rgba(255, 255, 255, 0.52)
-    );
+  color: var(--text);
 }
 
 .compare-tab.selected {
-  border-top: 3px solid #2b65d9;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.96),
-      rgba(255, 255, 255, 0.68)
-    );
-  font-weight: 700;
+  color: var(--text);
+}
+
+.compare-tab-title {
+  position: relative;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(0.95rem, 1.3vw, 1.2rem);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.compare-tab-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.3rem;
+  height: 1px;
+  border-radius: var(--r-full);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0% 50%;
+  transition: transform 0.3s var(--splash-expand);
+}
+
+.compare-tab:hover .compare-tab-title::after,
+.compare-tab.selected .compare-tab-title::after {
+  transform: scaleX(1);
 }
 
 .compare-tab small {
   display: block;
-  margin-top: 0.3rem;
-  color: #555;
+  margin-top: 0.45rem;
+  color: currentColor;
+  opacity: 0.72;
+  font-family: var(--font-sans);
   font-size: clamp(0.58rem, 0.7vw, 0.68rem);
   font-weight: 500;
 }
@@ -817,185 +1507,209 @@ select {
   z-index: 90;
   display: flex;
   flex: 0 1 390px;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
-  gap: 0.5rem;
   padding: 0.85rem 0;
   pointer-events: auto;
 }
 
-.region-jump label,
-.theme-switcher label {
-  color: #555;
-  font-size: clamp(0.68rem, 0.8vw, 0.8rem);
-  line-height: 1.1;
-}
+/* The trigger shows only the current selection - no "Jump to"
+   label, no boxed select - in the same display face the compare
+   tab titles use, so picking a region reads as choosing a state
+   rather than filling in a form field. */
 
-.region-jump select,
-.theme-switcher select {
-  padding: 0.45rem 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  border-radius: 0.55rem;
-  color: #111;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  font: inherit;
-  font-size: clamp(0.72rem, 0.85vw, 0.85rem);
-}
-
-#region-select {
-  width: min(100%, 240px);
-  min-width: 160px;
-}
-
-.theme-switcher {
-  display: flex;
+.region-trigger {
+  display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(0.85rem, 1.05vw, 1.05rem);
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 3px light-dark(rgba(245, 244, 239, 0.85), rgba(0, 0, 0, 0.5));
+  cursor: pointer;
 }
 
-.theme-switcher select {
-  min-width: 88px;
+.region-trigger:hover {
+  color: light-dark(#000, #fff);
 }
 
-#region-select option,
-#theme-select option {
-  color: #111;
-  background: #fff;
+.region-trigger-arrow {
+  display: inline-flex;
+  color: inherit;
+  transition: transform 0.25s var(--splash-expand);
+}
+
+.region-trigger[aria-expanded="true"] .region-trigger-arrow {
+  transform: rotate(180deg);
+}
+
+/* A grid-template-rows tween rather than a guessed max-height -
+   the same technique the splash detail block opens with, so the
+   accordion has an exact content height with nothing to measure
+   in script. */
+
+.region-accordion {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: 0fr;
+  width: max-content;
+  min-width: 100%;
+  transition: grid-template-rows 0.35s var(--splash-expand);
+}
+
+.region-jump.open .region-accordion {
+  grid-template-rows: 1fr;
+}
+
+.region-options {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+  min-height: 0;
+  padding-top: 0.9rem;
+  overflow: hidden;
+}
+
+.region-option {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(0.8rem, 0.95vw, 0.92rem);
+  text-align: right;
+  white-space: nowrap;
+  cursor: pointer;
+
+  /* The accordion gives the list its height; this gives the
+     items their own arrival inside it. A 40 ms cascade over
+     four options finishes in 120 ms - below the threshold
+     where a menu starts feeling like it has to be waited
+     for, but enough that the list reads top-down. */
+  opacity: 0;
+  translate: 0 -0.35rem;
+  transition:
+    opacity 0.26s ease-out,
+    translate 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms ease-out,
+    filter 160ms ease-out;
+
+  /* Options can sit further down over the globe than the top
+     wash reaches, so they carry the legend's four-way halo
+     instead of the single drop shadow the trigger uses. */
+  text-shadow:
+    0 1px 2px light-dark(rgba(245, 244, 239, 0.95), rgba(0, 0, 0, 0.85)),
+    0 -1px 2px light-dark(rgba(245, 244, 239, 0.95), rgba(0, 0, 0, 0.85)),
+    1px 0 2px light-dark(rgba(245, 244, 239, 0.95), rgba(0, 0, 0, 0.85)),
+    -1px 0 2px light-dark(rgba(245, 244, 239, 0.95), rgba(0, 0, 0, 0.85));
+}
+
+.region-jump.open .region-option {
+  opacity: 1;
+  translate: 0 0;
+}
+
+/* Four delays for four properties, in the order they are
+   listed above. Only the arrival is staggered - a blanket
+   transition-delay would put the same lag on the hover
+   colour and the press, and a menu item that takes 160 ms to
+   acknowledge the pointer feels broken. */
+
+.region-jump.open .region-option:nth-child(1) {
+  transition-delay: 0.04s, 0.04s, 0s, 0s;
+}
+
+.region-jump.open .region-option:nth-child(2) {
+  transition-delay: 0.08s, 0.08s, 0s, 0s;
+}
+
+.region-jump.open .region-option:nth-child(3) {
+  transition-delay: 0.12s, 0.12s, 0s, 0s;
+}
+
+.region-jump.open .region-option:nth-child(4) {
+  transition-delay: 0.16s, 0.16s, 0s, 0s;
+}
+
+/* Closing takes them all at once. A staggered exit would make
+   the reader watch a menu they have already finished with. */
+
+.region-jump:not(.open) .region-option {
+  transition:
+    opacity 0.12s ease-in,
+    translate 0.12s ease-in,
+    color 160ms ease-out,
+    filter 160ms ease-out;
+  transition-delay: 0s;
+}
+
+.region-option:hover {
+  color: light-dark(#000, #fff);
+}
+
+.region-option.selected {
+  color: var(--text);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .region-option {
+    translate: 0 0;
+  }
 }
 
 /* =========================================================
-   Dark header and controls
+   Brand row
+
+   The site name and its two quiet controls. Both sit under
+   the wordmark rather than in the nav, because neither is a
+   way of looking at the data - one opens prose, the other is
+   a display preference.
    ========================================================= */
 
-:root[data-theme="dark"] .compare-tabs {
+.brand-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+/* A filled disc for light, hollow for dark, half for auto -
+   the shape says which of the three is active without a
+   legend, and it is the same glyph in all three states so
+   the row never reflows as it cycles. */
+
+.theme-toggle-icon {
+  width: 0.72rem;
+  height: 0.72rem;
+  flex: 0 0 0.72rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.theme-toggle[data-theme="light"] .theme-toggle-icon {
+  background: currentColor;
+}
+
+.theme-toggle[data-theme="auto"] .theme-toggle-icon {
   background:
     linear-gradient(
-      135deg,
-      rgba(28, 36, 38, 0.82),
-      rgba(12, 20, 23, 0.68)
+      90deg,
+      currentColor 0 50%,
+      transparent 50% 100%
     );
-  box-shadow:
-    0 10px 32px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
-:root[data-theme="dark"] .compare-tab {
-  border-top: 0;
-  border-right-color: rgba(255, 255, 255, 0.12);
-  color: rgba(248, 252, 250, 0.92);
-  background: transparent;
-}
-
-:root[data-theme="dark"] .compare-tab small {
-  color: rgba(226, 235, 231, 0.72);
-}
-
-:root[data-theme="dark"] .compare-tab:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-:root[data-theme="dark"] .compare-tab.selected {
-  border-top: 3px solid #6fb6ff;
-  color: #fff;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(52, 64, 66, 0.94),
-      rgba(26, 37, 40, 0.78)
-    );
-}
-
-:root[data-theme="dark"] .region-jump label,
-:root[data-theme="dark"] .theme-switcher label,
-:root[data-theme="dark"] .about-button {
-  color: #d7ddd8;
-}
-
-:root[data-theme="dark"] .region-jump select,
-:root[data-theme="dark"] .theme-switcher select {
-  border-color: rgba(255, 255, 255, 0.16);
-  border-radius: 13px;
-  color: #f7fbf8;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(28, 36, 38, 0.84),
-      rgba(12, 20, 23, 0.72)
-    );
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-
-:root[data-theme="dark"] #region-select option,
-:root[data-theme="dark"] #theme-select option {
-  color: #f4f6f3;
-  background: #1f2522;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .compare-tabs {
-    background:
-      linear-gradient(
-        135deg,
-        rgba(28, 36, 38, 0.82),
-        rgba(12, 20, 23, 0.68)
-      );
-    box-shadow:
-      0 10px 32px rgba(0, 0, 0, 0.38),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-
-  :root[data-theme="auto"] .compare-tab {
-    border-top: 0;
-    border-right-color: rgba(255, 255, 255, 0.12);
-    color: rgba(248, 252, 250, 0.92);
-    background: transparent;
-  }
-
-  :root[data-theme="auto"] .compare-tab small {
-    color: rgba(226, 235, 231, 0.72);
-  }
-
-  :root[data-theme="auto"] .compare-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  :root[data-theme="auto"] .compare-tab.selected {
-    border-top: 3px solid #6fb6ff;
-    color: #fff;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(52, 64, 66, 0.94),
-        rgba(26, 37, 40, 0.78)
-      );
-  }
-
-  :root[data-theme="auto"] .region-jump label,
-  :root[data-theme="auto"] .theme-switcher label,
-  :root[data-theme="auto"] .about-button {
-    color: #d7ddd8;
-  }
-
-  :root[data-theme="auto"] .region-jump select,
-  :root[data-theme="auto"] .theme-switcher select {
-    border-color: rgba(255, 255, 255, 0.16);
-    color: #f7fbf8;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(28, 36, 38, 0.84),
-        rgba(12, 20, 23, 0.72)
-      );
-  }
-
-  :root[data-theme="auto"] #region-select option,
-  :root[data-theme="auto"] #theme-select option {
-    color: #f4f6f3;
-    background: #1f2522;
-  }
 }
 
 /* =========================================================
@@ -1008,6 +1722,12 @@ select {
   height: 100vh;
   overflow: hidden;
 }
+
+/* No `transition` on this shared rule. It sits after the
+   #single-map block up in the splash section, and a shorthand
+   here would win on source order and drop the blur-and-scale
+   reveal the intro is built on. Each container declares its
+   own instead. */
 
 #single-map,
 #compare-view {
@@ -1024,9 +1744,18 @@ select {
   z-index: 1;
 }
 
+/* Laid out as a grid whether or not it is on screen. `display`
+   does not interpolate, so flipping it back to block on the way
+   out would drop the two maps into a stacked column for the
+   length of the fade. */
+
 #compare-view {
   z-index: 2;
+  display: grid;
   grid-template-columns: 1fr 1fr;
+  transition:
+    opacity 0.34s ease,
+    visibility 0.34s ease;
 }
 
 .compare-map {
@@ -1042,7 +1771,6 @@ body.mode-change #single-map {
 }
 
 body.mode-compare #compare-view {
-  display: grid;
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
@@ -1054,12 +1782,19 @@ body.mode-compare #compare-view {
   bottom: 0;
   left: 50%;
   z-index: 20;
-  width: 5px;
+  width: 1px;
   visibility: hidden;
   opacity: 0;
-  background: #000;
+  background: var(--border);
   pointer-events: none;
   transform: translateX(-50%);
+
+  /* Arrives behind the two maps it divides rather than with
+     them - the rule only means something once there is
+     something on each side of it. */
+  transition:
+    opacity 0.3s ease 0.18s,
+    visibility 0.3s ease 0.18s;
 }
 
 body.mode-compare .split-line {
@@ -1126,6 +1861,13 @@ body.mode-compare .split-line {
   z-index: 40;
 }
 
+/* The logo is added independently of attributionControl, so the
+   left map still drew a second one. */
+
+#left-map .mapboxgl-ctrl-logo {
+  display: none;
+}
+
 /* =========================================================
    Compare year switch
    ========================================================= */
@@ -1133,7 +1875,7 @@ body.mode-compare .split-line {
 .compare-switch {
   position: absolute;
   left: 50%;
-  bottom: 34%;
+  bottom: var(--rail-y);
   z-index: 41;
   display: flex;
   align-items: center;
@@ -1142,11 +1884,20 @@ body.mode-compare .split-line {
   opacity: 0;
   pointer-events: auto;
   transform: translateX(-50%);
+
+  /* Rises into the frame once the split is there to control,
+     on the same delay as the rule between the two maps. */
+  translate: 0 0.5rem;
+  transition:
+    opacity 0.3s ease 0.18s,
+    visibility 0.3s ease 0.18s,
+    translate 0.42s cubic-bezier(0.16, 1, 0.3, 1) 0.18s;
 }
 
 body.mode-compare .compare-switch {
   visibility: visible;
   opacity: 1;
+  translate: 0 0;
 }
 
 .compare-year-stack {
@@ -1155,34 +1906,35 @@ body.mode-compare .compare-switch {
   gap: 0.25rem;
 }
 
+/* Same paper/ink pair as the sweep buttons and the mode tabs.
+   The current year is always shown inked, as if permanently
+   selected; an unselected year option previews that same fill
+   on hover, which is what selecting it commits to. */
+
 .compare-year-option,
 .compare-current-year {
   min-width: 56px;
-  padding: 0.35rem 0.5rem;
+  padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: 0.35rem;
-  color: #fff;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(17, 17, 17, 0.92),
-      rgba(17, 17, 17, 0.72)
-    );
+  border-radius: var(--r-xs);
+  box-shadow: var(--elev-chrome);
+  color: var(--cta-rest-ink);
+  background: var(--cta-rest-bg);
   font: inherit;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 600;
   text-align: center;
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
 .compare-year-option {
-  opacity: 0.55;
   cursor: pointer;
 }
 
-.compare-year-option.selected {
-  opacity: 1;
+.compare-year-option:hover,
+.compare-year-option.selected,
+.compare-current-year {
+  color: var(--cta-hover-ink);
+  background: var(--cta-hover-bg);
 }
 
 .compare-current-year {
@@ -1195,28 +1947,109 @@ body.mode-compare .compare-switch {
 
 .story-panel {
   position: absolute;
-  left: 5vw;
-  bottom: 8.5rem;
+  left: var(--rail-x);
+
+  /* Stacks on the left rail directly above the legend rather
+     than floating at its own hand-picked height. */
+  bottom: calc(var(--rail-y) + var(--legend-h) + var(--space-4));
   z-index: 40;
-  width: min(420px, calc(100% - 2rem));
+  width: min(24rem, calc(100% - 2 * var(--rail-x)));
   pointer-events: none;
+}
+
+/* The story shares a rail with the tour and alternates with it, so
+   it cannot be a card while the tour is bare type - the two would
+   trade places and the surface would blink in and out. Same wash,
+   mirrored to the corner this one sits in. */
+
+.story-panel::before {
+  content: "";
+  position: fixed;
+  top: 11rem;
+  left: 0;
+  bottom: 0;
+  z-index: -1;
+  width: min(44rem, 58%);
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to right,
+      light-dark(
+        rgba(245, 244, 239, 0.8),
+        rgba(4, 12, 11, 0.78)
+      ) 0%,
+      light-dark(
+        rgba(245, 244, 239, 0.76),
+        rgba(4, 12, 11, 0.74)
+      ) 22%,
+      light-dark(
+        rgba(245, 244, 239, 0.64),
+        rgba(4, 12, 11, 0.62)
+      ) 42%,
+      light-dark(
+        rgba(245, 244, 239, 0.46),
+        rgba(4, 12, 11, 0.46)
+      ) 60%,
+      light-dark(
+        rgba(245, 244, 239, 0.26),
+        rgba(4, 12, 11, 0.27)
+      ) 77%,
+      light-dark(
+        rgba(245, 244, 239, 0.09),
+        rgba(4, 12, 11, 0.1)
+      ) 91%,
+      transparent 100%
+    );
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 22%
+    );
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+/* The tour brings its own wash; two stacked would double the
+   density on the same corner. */
+
+body.tour-open .story-panel::before {
+  opacity: 0;
 }
 
 .story-panel h2 {
   margin: 0 0 1rem;
   color: #111;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: clamp(1.8rem, 3vw, 2.5rem);
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 .story-panel p {
   margin: 0;
-  padding: 1rem 1.1rem;
-  border-radius: 1rem;
-  color: var(--muted);
-  line-height: 1.65;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* Full-strength ink, as in the tour: off a surface the body copy
+     has to carry itself against whatever the map is doing. */
+  color: light-dark(#2a3327, rgba(238, 244, 240, 0.92));
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.62;
+  text-wrap: pretty;
   pointer-events: auto;
 }
+
+/* visibility is in the transition list below, or this would
+   cut the panel at frame one and the opacity fade beside it
+   would never be seen. */
 
 body.mode-compare .story-panel {
   visibility: hidden;
@@ -1224,10 +2057,99 @@ body.mode-compare .story-panel {
   pointer-events: none;
 }
 
-:root[data-theme="dark"] .story-panel {
-  left: 5vw;
-  bottom: 8.5rem;
-  width: min(420px, calc(100% - 2rem));
+/* The tour and the story panel are the same voice on the same
+   rail - step 1 used to present two glass cards of body copy
+   with nothing to say which to read. Dimming rather than
+   clearing was the first attempt and it still left two blocks
+   of prose stacked in one column; the story is duplicated
+   narration while the tour runs, not background context worth
+   keeping visible, so it stands down completely and returns
+   on the way out. */
+
+body.tour-open .story-panel {
+  opacity: 0;
+  scale: 0.98;
+  pointer-events: none;
+}
+
+.story-panel {
+  transform-origin: bottom left;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease,
+    scale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* =========================================================
+   Story panel copy motion
+
+   The story is the tour's voice on the tour's rail, and a
+   region jump replaces every word of it. Left alone it was
+   the one piece of prose on the site that changed by simply
+   being different in the next frame, while the tour beside
+   it - same type, same corner, same job - exits and enters.
+
+   So it borrows the tour's treatment, at a lower dose. Two
+   pieces rather than a line-by-line cascade: this panel is
+   re-read on every region change, and the full ceremony
+   would start charging for a move the reader makes often.
+   ========================================================= */
+
+.story-panel {
+  --tour-ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.story-piece {
+  transition:
+    opacity 0.42s var(--tour-ease),
+    translate 0.5s var(--tour-ease),
+    filter 0.42s var(--tour-ease);
+}
+
+.story-panel[data-phase="enter"] .story-piece {
+  opacity: 0;
+  translate: 0 14px;
+  filter: blur(5px);
+}
+
+.story-panel[data-phase="in"] .story-piece {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+.story-panel[data-phase="in"] .story-piece--title {
+  transition-delay: 0.02s;
+}
+
+.story-panel[data-phase="in"] .story-piece--text {
+  transition-delay: 0.1s;
+}
+
+/* Same ratio the tour uses - the exit is roughly a fifth of
+   the enter, and drops the stagger. The reader has already
+   chosen the new region and is waiting on the answer. */
+
+.story-panel[data-phase="exit"] .story-piece {
+  opacity: 0;
+  translate: 0 -8px;
+  filter: blur(3px);
+  transition:
+    opacity 0.16s ease-out,
+    translate 0.16s ease-out,
+    filter 0.16s ease-out;
+  transition-delay: 0s !important;
+}
+
+/* Keeps the sequencing, which is what says the text changed,
+   and drops the travel and the blur. */
+
+@media (prefers-reduced-motion: reduce) {
+  .story-panel[data-phase="enter"] .story-piece,
+  .story-panel[data-phase="exit"] .story-piece {
+    translate: 0 0;
+    filter: blur(0);
+  }
 }
 
 :root[data-theme="dark"] .story-panel h2 {
@@ -1235,25 +2157,12 @@ body.mode-compare .story-panel {
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
 }
 
-:root[data-theme="dark"] .story-panel p {
-  color: rgba(238, 244, 240, 0.88);
-}
-
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .story-panel {
-    left: 5vw;
-    bottom: 8.5rem;
-    width: min(420px, calc(100% - 2rem));
-  }
-
   :root[data-theme="auto"] .story-panel h2 {
     color: #f7faf8;
     text-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
   }
 
-  :root[data-theme="auto"] .story-panel p {
-    color: rgba(238, 244, 240, 0.88);
-  }
 }
 
 /* =========================================================
@@ -1262,18 +2171,18 @@ body.mode-compare .story-panel {
 
 .map-legend {
   position: absolute;
-  left: 1.1rem;
-  bottom: 1.1rem;
+  left: var(--rail-x);
+  bottom: var(--rail-y);
   z-index: 40;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   width: auto;
-  max-width: calc(100% - 2.2rem);
-  min-height: 2.6rem;
+  max-width: calc(100% - 2 * var(--rail-x));
+  min-height: var(--legend-h);
   padding: 0.4rem 0.55rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   background: transparent;
   box-shadow: none;
   pointer-events: none;
@@ -1285,7 +2194,7 @@ body.mode-compare .story-panel {
   gap: 0.45rem;
   color: #222;
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
   text-shadow:
@@ -1299,7 +2208,7 @@ body.mode-compare .story-panel {
   width: 0.82rem;
   height: 0.82rem;
   flex: 0 0 0.82rem;
-  border-radius: 0.3rem;
+  border-radius: var(--r-sm);
 }
 
 .map-legend-growth {
@@ -1310,11 +2219,24 @@ body.mode-compare .story-panel {
   background: #e76f51;
 }
 
+/* Matches STILL_COLOR in main.js. Unlike the growth and decline swatches this
+   one is nearly the value of a light globe behind it, so it carries its own
+   outline - heavier than --legend-hairline, which is tuned for a filled card. */
+.map-legend-still {
+  background: #e2e2d8;
+  box-shadow:
+    inset 0 0 0 1px
+      light-dark(
+        rgba(0, 0, 0, 0.35),
+        rgba(0, 0, 0, 0.25)
+      );
+}
+
 .map-legend-gradient {
   width: 2.8rem;
   height: 0.65rem;
   flex: 0 0 2.8rem;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   background:
     linear-gradient(
       90deg,
@@ -1329,7 +2251,7 @@ body.mode-compare .story-panel {
   width: 0.82rem;
   height: 1rem;
   flex: 0 0 0.82rem;
-  border-radius: 0.25rem 0.25rem 0.1rem 0.1rem;
+  border-radius: var(--r-sm) var(--r-sm) 2px 2px;
   background:
     linear-gradient(
       180deg,
@@ -1372,27 +2294,138 @@ body.mode-change .legend-present-only {
 
 .chart-panel {
   position: absolute;
-  right: 4vw;
-  bottom: 7vh;
+  right: var(--rail-x);
+  bottom: var(--rail-y);
   z-index: 40;
-  width: min(360px, calc(100% - 2rem));
-  padding: 1rem;
-  border-radius: 1rem;
+  width: min(24rem, calc(100% - 2 * var(--rail-x)));
+
+  /* No card. The tour proved the copy does not need one, and this
+     panel was the last glass surface on the map - a bordered,
+     blurred, radius-20 slab holding six smaller bordered slabs.
+     What survives is type on a wash, the same as the tour, mirrored
+     to the rail it lives on. */
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(0.6rem);
+
+  /* No transform of any kind on this element. A `translate` here -
+     even the 0.6rem entrance it used to have - makes the panel the
+     containing block for its own position:fixed wash, so the wash
+     silently collapses to the panel's own box instead of spanning
+     the viewport edge. The entrance moved to the content below. */
   transition:
-    opacity 0.25s ease,
-    visibility 0.25s ease,
-    transform 0.25s ease;
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+/* The five rows arrive in reading order rather than as one
+   slab. 60 ms apart puts the caption in place 240 ms behind
+   the title, which is long enough to read as a sequence and
+   short enough that the panel is settled before anyone has
+   finished looking at the first number. */
+
+.chart-panel-header,
+.mini-chart-block,
+#chart-caption {
+  translate: 0 0.5rem;
+  transition: translate 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.mode-change .chart-panel-header,
+body.mode-change .mini-chart-block,
+body.mode-change #chart-caption {
+  translate: 0 0;
+}
+
+/* nth-of-type counts divs, and .chart-panel-header is one -
+   so the three blocks are 2, 3 and 4. */
+
+body.mode-change .mini-chart-block:nth-of-type(2) {
+  transition-delay: 0.06s;
+}
+
+body.mode-change .mini-chart-block:nth-of-type(3) {
+  transition-delay: 0.12s;
+}
+
+body.mode-change .mini-chart-block:nth-of-type(4) {
+  transition-delay: 0.18s;
+}
+
+body.mode-change #chart-caption {
+  transition-delay: 0.24s;
+}
+
+/* The wash, mirrored from the tour's. Anchored to the right edge so
+   it has no centre, and stopped short of the header rather than run
+   full height: the zoom cluster shares this rail, and a full-height
+   layer at the panel's own z-index would paint straight over it. */
+
+.chart-panel::before {
+  content: "";
+  position: fixed;
+  top: 11rem;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+
+  /* Wide enough that the strong part clears the panel's far edge
+     before the falloff starts. Sized narrower first, and the last
+     stop landed inside the column - the labels on the left of the
+     panel were sitting on almost bare map. */
+  width: min(44rem, 58%);
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to left,
+      light-dark(
+        rgba(245, 244, 239, 0.8),
+        rgba(4, 12, 11, 0.78)
+      ) 0%,
+      light-dark(
+        rgba(245, 244, 239, 0.76),
+        rgba(4, 12, 11, 0.74)
+      ) 22%,
+      light-dark(
+        rgba(245, 244, 239, 0.64),
+        rgba(4, 12, 11, 0.62)
+      ) 42%,
+      light-dark(
+        rgba(245, 244, 239, 0.46),
+        rgba(4, 12, 11, 0.46)
+      ) 60%,
+      light-dark(
+        rgba(245, 244, 239, 0.26),
+        rgba(4, 12, 11, 0.27)
+      ) 77%,
+      light-dark(
+        rgba(245, 244, 239, 0.09),
+        rgba(4, 12, 11, 0.1)
+      ) 91%,
+      transparent 100%
+    );
+
+  /* Fades out at the top edge too, so the band does not end on a
+     horizontal line partway up the screen. */
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 22%
+    );
 }
 
 body.mode-change .chart-panel {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
 }
 
 body.mode-present .chart-panel,
@@ -1406,182 +2439,205 @@ body.mode-compare .chart-panel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
+
+/* The region name, in the display face like every other title on
+   the site. It is the only thing here that needs to announce
+   itself, so it is the only thing set large. */
 
 .chart-panel h3 {
-  margin: 0 0 0.8rem;
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.chart-panel-header h3 {
   margin: 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
 .chart-close-button {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border: 0;
-  border-radius: 999px;
-  color: #111;
-  background: rgba(255, 255, 255, 0.5);
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid light-dark(
+    rgba(0, 0, 0, 0.16),
+    rgba(255, 255, 255, 0.22)
+  );
+  border-radius: var(--r-full);
+  color: var(--text);
+  background: none;
   font: inherit;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
 }
 
+/* =========================================================
+   Sections
+
+   One hairline where the panel needs it and nowhere else: right
+   under the header, to separate the title from the first figure,
+   and above the caption, to set the footnote apart from the data
+   it explains. The two rules in between - NDVI to share, share to
+   area - are gaps now, not lines; three sections in a column this
+   narrow read as a sequence without needing a rule between every
+   one of them, and the repetition was doing less than the header
+   and caption rules do on their own.
+   ========================================================= */
+
 .mini-chart-block {
-  margin-top: 0.85rem;
+  margin-top: var(--space-5);
+}
+
+/* :first-of-type won't do it - .chart-panel-header is also a div,
+   so it claims "first div among siblings" and no .mini-chart-block
+   ever matches. The header is the only fixed neighbor the first
+   block has, so target that adjacency directly. */
+
+.chart-panel-header + .mini-chart-block {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--legend-hairline);
 }
 
 .mini-chart-label {
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-3);
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
+
+/* =========================================================
+   NDVI bars
+
+   Kept, because these are the one place a mark carries something
+   the number cannot: three bars show at a glance that the three
+   years are nearly identical, which three decimals do not. Thinned
+   to a hairline-and-a-half so they read as a measurement rather
+   than a UI component, and the track lost its pill so it stops
+   looking like a progress bar.
+   ========================================================= */
 
 .bar-chart {
   display: grid;
-  gap: 0.45rem;
+  gap: var(--space-3);
 }
 
 .bar-row {
   display: grid;
-  grid-template-columns: 44px 1fr 46px;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.75rem;
+  gap: var(--space-3);
+  color: var(--text);
+  font-size: 0.8rem;
+
+  /* Year and value columns both hold digits that change between
+     regions; lining figures stop the rows twitching. */
+  font-variant-numeric: tabular-nums;
 }
 
 .bar-track {
-  height: 10px;
+  height: 4px;
   overflow: hidden;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.08);
+  border-radius: 0;
+
+  /* Firmer than --legend-hairline: that token is tuned for a rule
+     on a flat panel, and this one has to stay visible over map. */
+  background: light-dark(
+    rgba(0, 0, 0, 0.16),
+    rgba(255, 255, 255, 0.16)
+  );
 }
 
 .bar-fill {
   width: 0%;
   height: 100%;
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(44, 162, 95, 0.82),
-      rgba(64, 190, 140, 0.96)
-    );
-  transition:
-    width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: width;
+  border-radius: 0;
+  background: var(--growth-green);
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .chart-loading {
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
+
+/* =========================================================
+   Figures
+
+   Were six bordered, gradient-filled, inset-highlighted boxes.
+   Now they are numbers with labels under them: size separates the
+   figure from its caption, colour separates growth from decline,
+   and the column gap separates the pair. Nothing is drawn.
+   ========================================================= */
 
 .change-chart,
 .area-chart {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: var(--space-4);
 }
 
 .change-box,
 .area-box {
-  padding: 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  border-radius: 0.75rem;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.62),
-      rgba(255, 255, 255, 0.32)
-    );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 
 .change-box strong,
 .area-box strong {
   display: block;
-  font-size: 1.05rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .area-box strong {
-  font-size: 0.95rem;
-  line-height: 1.15;
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
 }
 
 .change-box span,
 .area-box span {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.4rem;
   color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.area-box span {
-  font-size: 0.68rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  text-wrap: pretty;
 }
 
 .change-box.growth strong,
 .area-box.added strong {
-  color: var(--growth-green);
+  color: light-dark(var(--growth-green-dark), #6ee7a8);
 }
 
 .change-box.decline strong,
 .area-box.lost strong {
-  color: var(--decline-orange);
+  color: light-dark(var(--decline-orange-dark), #f5977c);
 }
 
 #chart-caption {
-  margin: 0.85rem 0 0;
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--legend-hairline);
   color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.45;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  text-wrap: pretty;
 }
 
 .mobile-chart-toggle {
   display: none;
-}
-
-:root[data-theme="dark"] .bar-track {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-:root[data-theme="dark"] .change-box,
-:root[data-theme="dark"] .area-box {
-  border-color: rgba(255, 255, 255, 0.12);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.04)
-    );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .bar-track {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  :root[data-theme="auto"] .change-box,
-  :root[data-theme="auto"] .area-box {
-    border-color: rgba(255, 255, 255, 0.12);
-    background:
-      linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1),
-        rgba(255, 255, 255, 0.04)
-      );
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
 }
 
 /* =========================================================
@@ -1589,16 +2645,39 @@ body.mode-compare .chart-panel {
    ========================================================= */
 
 .tour-overlay {
+  /* One ease for everything here. The built-in curves are too
+     soft to read as deliberate at these distances; this is the
+     strong ease-out the intro already uses. */
+  --tour-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
   position: fixed;
   inset: 0;
   z-index: 160;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 6.5rem 2rem 2rem;
+
+  /* Vertically centred in the left column rather than pinned
+     under the header: it clears the brand above and the legend
+     below without either being a number anyone had to pick. */
+  align-items: center;
+
+  /* The tour is narrative, and narrative lives in the left
+     column on this site - the story panel is already there,
+     and the data panel owns the right rail. Sending the tour
+     to the left keeps that split intact; step 4 opens the
+     chart, which would otherwise land underneath it. */
+  justify-content: flex-start;
+  padding: 6.5rem var(--rail-x) var(--rail-y);
   visibility: hidden;
   opacity: 0;
-  background: rgba(0, 0, 0, 0.12);
+
+  /* The overlay never takes pointer events, open or closed. It
+     used to carry a dim scrim and swallow the whole viewport,
+     which was defensible while the copy sat in a card. With the
+     copy on the map and no scrim to explain it, a full-bleed
+     blocker would leave the globe looking draggable and not be.
+     Only the copy and its buttons take input; the planet stays
+     live underneath, which is the better reading experience
+     anyway. */
   pointer-events: none;
   transition:
     opacity 0.3s ease,
@@ -1608,94 +2687,334 @@ body.mode-compare .chart-panel {
 body.tour-open .tour-overlay {
   visibility: visible;
   opacity: 1;
+}
+
+body.tour-open .tour-card {
   pointer-events: auto;
 }
 
+/* =========================================================
+   Tour copy
+
+   No card. The globe is centred and leaves the left third of
+   the stage empty, so the type sits straight on the map and
+   the reader looks at one thing instead of a panel in front
+   of a planet.
+
+   What a card was really providing was contrast, so that is
+   provided directly: a wide radial wash with no edge anywhere
+   in it, plus a tuned shadow on the glyphs. A box would have
+   drawn a border the eye reads as a second object; a wash
+   just makes the map quieter behind the words.
+   ========================================================= */
+
 .tour-card {
-  width: min(440px, 100%);
-  margin-right: 19vw;
-  padding: 1.35rem;
-  border-radius: 1.25rem;
+  position: relative;
+  width: min(23rem, 100%);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* The contrast the card used to supply, supplied instead by the
+   page's own ground reaching in from the left edge and fading
+   out before it gets anywhere near the globe.
+
+   A wash centred on the text was the first attempt. It worked,
+   but a radial gradient has a centre, and once you notice the
+   centre you are looking at a shape again - the soft-edged
+   ghost of the card. Running it off the viewport edge removes
+   the centre entirely: there is no point at which it starts,
+   only a side of the screen that is opaque and a middle that is
+   not.
+
+   It lives on the body rather than on the tour overlay, and the
+   reason is z-order. The overlay sits at 160, above the header
+   and the legend; a wash painted there dimmed the wordmark and
+   the tabs along with the map. Down here it is above the globe
+   at 1 and below the legend at 40, so it quiets exactly the
+   layer it is meant to and nothing else. */
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+
+  /* Deliberately weaker than it started. setTourFraming() moves
+     the globe out of the left column on any viewport wide enough
+     to have one, so on the common path there is nothing behind
+     the copy to fight and this is invisible. It is still needed
+     for the cases the camera cannot solve: compare mode, whose
+     two globes are framed in their own halves, narrow viewports
+     where the copy runs full width, and regional steps zoomed far
+     enough in that land fills the frame. */
+  width: min(40rem, 52%);
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to right,
+      light-dark(
+        rgba(245, 244, 239, 0.72),
+        rgba(4, 12, 11, 0.7)
+      ) 0%,
+      light-dark(
+        rgba(245, 244, 239, 0.67),
+        rgba(4, 12, 11, 0.65)
+      ) 24%,
+      light-dark(
+        rgba(245, 244, 239, 0.53),
+        rgba(4, 12, 11, 0.52)
+      ) 46%,
+      light-dark(
+        rgba(245, 244, 239, 0.33),
+        rgba(4, 12, 11, 0.33)
+      ) 66%,
+      light-dark(
+        rgba(245, 244, 239, 0.13),
+        rgba(4, 12, 11, 0.14)
+      ) 85%,
+      transparent 100%
+    );
+
+  /* Fades with the tour rather than snapping in with it. */
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+
+body.tour-open::before {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  body::before {
+    width: 100%;
+    background:
+      linear-gradient(
+        to right,
+        light-dark(
+          rgba(245, 244, 239, 0.8),
+          rgba(4, 12, 11, 0.78)
+        ) 0%,
+        light-dark(
+          rgba(245, 244, 239, 0.74),
+          rgba(4, 12, 11, 0.72)
+        ) 26%,
+        light-dark(
+          rgba(245, 244, 239, 0.58),
+          rgba(4, 12, 11, 0.57)
+        ) 50%,
+        light-dark(
+          rgba(245, 244, 239, 0.35),
+          rgba(4, 12, 11, 0.36)
+        ) 71%,
+        light-dark(
+          rgba(245, 244, 239, 0.13),
+          rgba(4, 12, 11, 0.14)
+        ) 90%,
+        transparent 100%
+      );
+  }
 }
 
 .tour-step-count {
-  margin: 0 0 0.5rem;
-  color: var(--growth-green);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin: 0 0 var(--space-2);
+  color: light-dark(var(--growth-green-dark), #7fe0a6);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .tour-card h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.6rem;
-  line-height: 1.15;
+  margin: 0 0 var(--space-3);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 700;
+
+  /* Larger than it was in the card. Off a surface the type has
+     to hold the corner on its own, and size is what does that. */
+  font-size: clamp(1.75rem, 2.4vw, 2.35rem);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
 .tour-card p {
-  color: var(--muted);
-  line-height: 1.6;
+  margin: 0;
+
+  /* Full-strength ink, not --muted. Over a moving background
+     the body copy needs the contrast the card used to lend it,
+     and it carries a little more weight for the same reason. */
+  color: light-dark(#2a3327, rgba(238, 244, 240, 0.92));
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.62;
+  text-wrap: pretty;
 }
+
+/* A tight shadow rather than the four-way halo the map legend
+   uses - a halo traces the glyph and reads as an outline, one
+   soft drop just lifts it off whatever is behind. */
+
+.tour-card h2,
+.tour-card p,
+.tour-step-count {
+  text-shadow:
+    0 1px 2px light-dark(
+      rgba(245, 244, 239, 0.9),
+      rgba(0, 0, 0, 0.55)
+    );
+}
+
+/* =========================================================
+   Tour text motion
+
+   Each step swaps the copy underneath a fixed frame, so the
+   change has to be legible as a change. The old text leaves
+   quickly and as one block; the new one arrives in parts -
+   label, heading, then the body a line at a time - so the eye
+   is led down the passage in reading order.
+
+   Exit is roughly a fifth of the enter. The user has already
+   decided by then and is waiting on the system.
+   ========================================================= */
+
+.tour-piece {
+  transition:
+    opacity 0.42s var(--tour-ease),
+    translate 0.5s var(--tour-ease),
+    filter 0.42s var(--tour-ease);
+}
+
+/* Enter: below and soft, rising into place. */
+
+.tour-card[data-phase="enter"] .tour-piece {
+  opacity: 0;
+  translate: 0 14px;
+  filter: blur(5px);
+}
+
+.tour-card[data-phase="in"] .tour-piece {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+/* Exit: up and out, fast, no stagger - a step change should
+   not make the reader wait through a farewell. */
+
+.tour-card[data-phase="exit"] .tour-piece {
+  opacity: 0;
+  translate: 0 -8px;
+  filter: blur(3px);
+  transition:
+    opacity 0.16s ease-out,
+    translate 0.16s ease-out,
+    filter 0.16s ease-out;
+  transition-delay: 0s !important;
+}
+
+.tour-card[data-phase="in"] .tour-piece--count {
+  transition-delay: 0.02s;
+}
+
+.tour-card[data-phase="in"] .tour-piece--title {
+  transition-delay: 0.08s;
+}
+
+.tour-card[data-phase="in"] .tour-piece--actions {
+  transition-delay: 0.34s;
+}
+
+/* The body is split one rendered line per .tour-line by
+   splitIntoLines() in main.js, so each line can slide up out
+   of its own mask instead of the paragraph fading as a slab.
+   The padding/margin pair keeps descenders off the mask edge. */
+
+.tour-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.tour-line-inner {
+  display: block;
+
+  /* Cancels the paragraph's text-wrap: pretty - each of these
+     holds one already-measured line, and `pretty` re-balances
+     a block to avoid short last lines, which on a single-line
+     block means splitting it in two. */
+  text-wrap: wrap;
+  translate: 0 110%;
+  transition: translate 0.62s var(--tour-ease);
+}
+
+.tour-card[data-phase="in"] .tour-line-inner {
+  translate: 0 0;
+}
+
+.tour-card[data-phase="exit"] .tour-line-inner {
+  translate: 0 -40%;
+  transition: translate 0.16s ease-out;
+  transition-delay: 0s !important;
+}
+
+/* =========================================================
+   Tour controls
+
+   The primary shares the intro's CTA object outright, same as
+   the takeaway's; the secondary is the same quiet underlined
+   link as "Explore the Story Again" (styled above, in Final
+   takeaway). One inked object per screen, everywhere it appears.
+   ========================================================= */
 
 .tour-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  margin-top: 1.2rem;
-}
-
-.tour-primary-button,
-.tour-secondary-button {
-  padding: 0.7rem 1rem;
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
+  justify-content: flex-start;
+  gap: var(--space-4);
+  align-items: center;
+  margin-top: var(--space-5);
 }
 
 .tour-primary-button {
-  color: white;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(17, 17, 17, 0.94),
-      rgba(17, 17, 17, 0.74)
-    );
+  padding: 0.65rem 1.4rem;
+  font-size: 0.88rem;
 }
 
-.tour-primary-button:hover {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(44, 162, 95, 0.96),
-      rgba(31, 126, 74, 0.74)
-    );
-}
+/* Reduced motion keeps the sequencing - it is what tells the
+   reader the step changed - and drops every bit of travel. */
 
-.tour-secondary-button {
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  color: #222;
-  background: rgba(255, 255, 255, 0.5);
-}
+@media (prefers-reduced-motion: reduce) {
+  .tour-card[data-phase="enter"] .tour-piece,
+  .tour-card[data-phase="exit"] .tour-piece {
+    translate: 0 0;
+    filter: blur(0);
+  }
 
-:root[data-theme="dark"] .tour-secondary-button {
-  border-color: rgba(255, 255, 255, 0.13);
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.09);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .tour-secondary-button {
-    border-color: rgba(255, 255, 255, 0.13);
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.09);
+  .tour-line,
+  .tour-line-inner,
+  .tour-card[data-phase="enter"] .tour-line-inner,
+  .tour-card[data-phase="exit"] .tour-line-inner {
+    overflow: visible;
+    translate: 0 0;
   }
 }
 
 /* =========================================================
    About modal
+
+   The intro's paper, full bleed, same as the takeaway - no card
+   floating on a dimmed map, so the piece never has three
+   different surfaces for "read some text" (splash, tour, about,
+   takeaway all used to be different objects; now they're one).
    ========================================================= */
 
 .about-modal {
@@ -1703,16 +3022,23 @@ body.tour-open .tour-overlay {
   inset: 0;
   z-index: 180;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
+  justify-content: safe center;
+  padding:
+    clamp(2rem, 5vh, 5rem)
+    clamp(1.25rem, 5vw, 4rem);
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
   visibility: hidden;
   opacity: 0;
-  background: rgba(0, 0, 0, 0.22);
+  color: var(--splash-ink);
+  background: var(--splash-bg);
+  text-align: center;
   pointer-events: none;
   transition:
-    opacity 0.25s ease,
-    visibility 0.25s ease;
+    opacity 0.5s ease,
+    visibility 0.5s ease;
 }
 
 body.about-open .about-modal {
@@ -1721,79 +3047,163 @@ body.about-open .about-modal {
   pointer-events: auto;
 }
 
+/* No card. The overlay is the surface. */
+
 .about-card {
-  width: min(680px, 100%);
-  max-height: min(760px, 88vh);
-  padding: 2rem;
-  overflow-y: auto;
-  border-radius: 1.25rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(640px, 100%);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  color: inherit;
+  background: none;
+  box-shadow: none;
 }
 
-.about-close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 3;
-  width: 2rem;
-  height: 2rem;
-  border: 0;
-  border-radius: 999px;
-  color: #111;
-  background: rgba(255, 255, 255, 0.48);
-  font: inherit;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
+/* Same staged rise as the takeaway - a transition rather than a
+   keyframe, since this can open more than once in a session. */
+
+.about-rise {
+  opacity: 0;
+  translate: 0 18px;
+  filter: blur(6px);
+  transition:
+    opacity 0.55s var(--splash-ease-out),
+    translate 0.7s var(--splash-ease-out),
+    filter 0.55s var(--splash-ease-out);
+}
+
+body.about-open .about-rise {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+body.about-open .about-rise--1 { transition-delay: 0.06s; }
+body.about-open .about-rise--2 { transition-delay: 0.15s; }
+body.about-open .about-rise--3 { transition-delay: 0.27s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .about-rise {
+    translate: 0 0;
+    filter: blur(0);
+  }
 }
 
 .about-kicker {
-  margin: 0 0 0.5rem;
-  color: var(--growth-green);
+  margin: 0 0 clamp(0.6rem, 1.5vh, 1rem);
+  color: var(--splash-ink-faint);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .about-card h2 {
-  margin: 0 0 1rem;
-  font-size: 2rem;
+  max-width: 20ch;
+  margin: 0;
+  padding: 0;
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.4vw, 3rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.about-body {
+  width: min(64ch, 100%);
+  margin-top: clamp(2rem, 5vh, 3rem);
 }
 
 .about-card h3 {
-  margin: 1.35rem 0 0.4rem;
-  font-size: 1rem;
+  margin: clamp(2rem, 5vh, 2.75rem) 0 clamp(0.7rem, 1.6vh, 1rem);
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.about-body > h3:first-child {
+  margin-top: 0;
 }
 
 .about-card p {
   margin: 0;
-  color: var(--muted);
-  line-height: 1.65;
+  color: var(--splash-ink-fine);
+  font-size: clamp(0.95rem, 1.15vw, 1.05rem);
+  font-weight: 500;
+  line-height: 1.7;
+  text-wrap: pretty;
 }
 
 .about-card p + p {
-  margin-top: 0.8rem;
+  margin-top: 1.1em;
 }
 
 .about-card a {
-  color: var(--growth-green);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.about-card a:hover {
+  color: var(--splash-ink);
+  font-weight: 600;
   text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.28em;
+  text-decoration-color: light-dark(
+    rgba(0, 0, 0, 0.3),
+    rgba(255, 255, 255, 0.35)
+  );
 }
 
-:root[data-theme="dark"] .about-close-button {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .about-card a:hover {
+    text-decoration-color: currentColor;
+  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .about-close-button {
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.14);
+/* Same hairline circle as the takeaway's close button - the
+   screen has no card for a filled disc to sit on. */
+
+.about-close-button {
+  position: fixed;
+  top: clamp(1rem, 2.5vh, 1.75rem);
+  right: clamp(1rem, 2.5vw, 1.75rem);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid light-dark(
+    rgba(0, 0, 0, 0.16),
+    rgba(255, 255, 255, 0.22)
+  );
+  border-radius: var(--r-full);
+  color: var(--splash-ink);
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .about-close-button:hover {
+    border-color: light-dark(
+      rgba(0, 0, 0, 0.34),
+      rgba(255, 255, 255, 0.42)
+    );
+    background: light-dark(
+      rgba(0, 0, 0, 0.04),
+      rgba(255, 255, 255, 0.07)
+    );
   }
 }
 
@@ -1803,7 +3213,7 @@ body.about-open .about-modal {
 
 .mapboxgl-popup-content {
   padding: 0.8rem 0.9rem;
-  border-radius: 0.8rem;
+  border-radius: var(--r-md);
   background:
     linear-gradient(
       135deg,
@@ -1817,7 +3227,7 @@ body.about-open .about-modal {
 
 .mapboxgl-ctrl-top-right {
   top: 90px;
-  right: 10px;
+  right: var(--rail-x);
 }
 
 :root[data-theme="dark"] .mapboxgl-popup-content {
@@ -1832,7 +3242,7 @@ body.about-open .about-modal {
 
 :root[data-theme="dark"] .mapboxgl-ctrl-group {
   overflow: hidden;
-  border-radius: 18px !important;
+  border-radius: var(--r-lg) !important;
   background:
     linear-gradient(
       145deg,
@@ -1868,7 +3278,7 @@ body.about-open .about-modal {
 
   :root[data-theme="auto"] .mapboxgl-ctrl-group {
     overflow: hidden;
-    border-radius: 18px !important;
+    border-radius: var(--r-lg) !important;
     background:
       linear-gradient(
         145deg,
@@ -1895,33 +3305,53 @@ body.about-open .about-modal {
    ========================================================= */
 
 .takeaway-overlay {
+  /* Same three curves the intro runs on. --splash-expand is named
+     rather than re-aliased because .start-button-face reads that
+     exact variable, and the shared CTA has to wipe at the shared
+     speed wherever it is used. */
+  --takeaway-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --takeaway-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --splash-expand: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* One measure for the whole column, as in the intro, so the
+     lead, the three points and the closing note all read against
+     the same edge. */
+  --takeaway-measure: min(880px, 100%);
+
   position: fixed;
   inset: 0;
   z-index: 190;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+
+  /* "safe" keeps the top reachable when the column overflows a
+     short viewport; older browsers keep "center". */
+  justify-content: safe center;
+  padding:
+    clamp(2rem, 5vh, 5rem)
+    clamp(1.25rem, 5vw, 4rem);
+  overflow-y: auto;
+
+  /* Reserved even when nothing overflows, so the centred column
+     does not shift sideways the moment a scrollbar appears. */
+  scrollbar-gutter: stable both-edges;
   visibility: hidden;
   opacity: 0;
-  background:
-    radial-gradient(
-      circle at 18% 20%,
-      rgba(44, 162, 95, 0.18),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 84% 78%,
-      rgba(16, 63, 145, 0.12),
-      transparent 32%
-    ),
-    rgba(8, 18, 16, 0.42);
+
+  /* The intro's paper, full bleed. This was a dark glass modal
+     floating on a blurred map - a different material, a different
+     ground and a different shape from the screen that opens the
+     piece, which made the ending look like it came from another
+     project. The ending should rhyme with the beginning. */
+  color: var(--splash-ink);
+  background: var(--splash-bg);
+  text-align: center;
   pointer-events: none;
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
   transition:
-    opacity 0.3s ease,
-    visibility 0.3s ease;
+    opacity 0.5s ease,
+    visibility 0.5s ease;
 }
 
 body.takeaway-open .takeaway-overlay {
@@ -1930,541 +3360,316 @@ body.takeaway-open .takeaway-overlay {
   pointer-events: auto;
 }
 
+/* No card. The overlay is the surface. */
+
 .takeaway-card {
   position: relative;
-  width: min(920px, 100%);
-  max-height: 90vh;
-  padding: clamp(1.5rem, 3vw, 2.5rem);
-  overflow-y: auto;
-  border: 1px solid var(--glass-border);
-  border-radius: 1.6rem;
-  color: var(--text);
-  background:
-    radial-gradient(
-      circle at top left,
-      rgba(44, 162, 95, 0.13),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at bottom right,
-      rgba(16, 63, 145, 0.1),
-      transparent 34%
-    ),
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.94),
-      rgba(246, 249, 245, 0.82)
-    );
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.28),
-    var(--glass-inner);
-  backdrop-filter: blur(28px) saturate(165%);
-  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--takeaway-measure);
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  color: inherit;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-.takeaway-close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.15rem;
-  height: 2.15rem;
-  border: 0;
-  border-radius: 999px;
-  color: #111;
-  background: rgba(255, 255, 255, 0.58);
-  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.1);
-  font: inherit;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
+/* =========================================================
+   Staged reveal
+
+   Transitions rather than the intro's one-shot keyframes: the
+   takeaway can be opened more than once - finish the tour, run
+   it again, finish again - and a keyframe would only play the
+   first time unless the nodes were rebuilt.
+   ========================================================= */
+
+.takeaway-rise {
+  opacity: 0;
+  translate: 0 18px;
+  filter: blur(6px);
+  transition:
+    opacity 0.55s var(--takeaway-ease-out),
+    translate 0.7s var(--takeaway-ease-out),
+    filter 0.55s var(--takeaway-ease-out);
 }
+
+body.takeaway-open .takeaway-rise {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+}
+
+body.takeaway-open .takeaway-rise--1 { transition-delay: 0.06s; }
+body.takeaway-open .takeaway-rise--2 { transition-delay: 0.15s; }
+body.takeaway-open .takeaway-rise--3 { transition-delay: 0.27s; }
+body.takeaway-open .takeaway-rise--4 { transition-delay: 0.36s; }
+body.takeaway-open .takeaway-rise--5 { transition-delay: 0.45s; }
+body.takeaway-open .takeaway-rise--6 { transition-delay: 0.54s; }
+body.takeaway-open .takeaway-rise--7 { transition-delay: 0.63s; }
+
+/* =========================================================
+   Takeaway copy
+   ========================================================= */
 
 .takeaway-kicker {
-  margin: 0 0 0.55rem;
-  color: var(--growth-green);
+  margin: 0 0 clamp(0.9rem, 2vh, 1.6rem);
+  color: var(--splash-ink-faint);
   font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .takeaway-card > h2 {
-  max-width: 720px;
-  margin: 0 0 0.9rem;
-  padding-right: 2.5rem;
-  font-size: clamp(2rem, 4vw, 3.3rem);
-  line-height: 1.03;
+  max-width: 20ch;
+  margin: 0;
+  padding: 0;
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5.4vw, 4.4rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
 .takeaway-lead {
-  max-width: 760px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.7;
+  max-width: 46ch;
+  margin: clamp(1.1rem, 3vh, 2.4rem) auto 0;
+  color: var(--splash-ink-soft);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 600;
+  line-height: 1.5;
+  text-wrap: pretty;
 }
+
+/* =========================================================
+   The three points
+
+   Presented the way the intro presents its two colour scales:
+   one system, no boxes. Each point is a coloured rule with a
+   label under it, so the three read as parts of one argument
+   rather than three tinted panels competing for attention.
+
+   The rule carries the colour and the words do not, which is
+   the same rule the intro's legend follows - tinting both was
+   saying it twice.
+   ========================================================= */
 
 .takeaway-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.85rem;
-  margin-top: 1.6rem;
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  width: var(--takeaway-measure);
+  margin-top: clamp(2.25rem, 6vh, 4.5rem);
+  text-align: left;
 }
 
 .takeaway-point {
-  padding: 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  border-radius: 1rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.66),
-    0 10px 25px rgba(0, 0, 0, 0.07);
+  padding: clamp(0.9rem, 2vh, 1.3rem) 0 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
 }
 
+/* The rule is a border rather than a pseudo-element so it sits
+   on the column's own box and stays aligned with the text under
+   it at every width. */
+
 .takeaway-point--and {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(44, 162, 95, 0.18),
-      rgba(44, 162, 95, 0.06)
-    );
+  border-top: 2px solid var(--growth-green);
 }
 
 .takeaway-point--but {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(231, 111, 81, 0.17),
-      rgba(231, 111, 81, 0.05)
-    );
+  border-top: 2px solid var(--decline-orange);
 }
 
 .takeaway-point--therefore {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(16, 63, 145, 0.15),
-      rgba(16, 63, 145, 0.05)
-    );
+  border-top: 2px solid light-dark(var(--signal-blue), #7ba7f0);
 }
 
 .takeaway-label {
-  display: inline-flex;
-  margin-bottom: 0.75rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.56);
+  display: block;
+  margin: 0 0 clamp(0.75rem, 1.6vh, 1.1rem);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--splash-ink-faint);
   font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.takeaway-point--and .takeaway-label {
-  color: var(--growth-green-dark);
-}
-
-.takeaway-point--but .takeaway-label {
-  color: var(--decline-orange-dark);
-}
-
-.takeaway-point--therefore .takeaway-label {
-  color: var(--signal-blue);
-}
-
 .takeaway-point h3 {
-  margin: 0 0 0.55rem;
-  font-size: 1rem;
-  line-height: 1.3;
+  margin: 0 0 0.6rem;
+  color: var(--splash-ink);
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
 .takeaway-point p {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.55;
+  color: var(--splash-ink-fine);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.62;
+  text-wrap: pretty;
 }
 
+/* =========================================================
+   Closing note
+
+   Also unboxed. Its heading is set in the display face at the
+   same size as the intro's "How to read the globe", because it
+   does the same job: naming a block of explanation below it.
+   ========================================================= */
+
 .takeaway-why {
-  margin-top: 1rem;
-  padding: 1.15rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  border-radius: 1rem;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.64),
-      rgba(255, 255, 255, 0.3)
-    );
+  width: min(64ch, 100%);
+  margin-top: clamp(2.25rem, 6vh, 4.5rem);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
 }
 
 .takeaway-why h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+  margin: 0 0 clamp(0.85rem, 2vh, 1.4rem);
+  color: var(--splash-ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 
 .takeaway-why p {
   margin: 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.6;
+  color: var(--splash-ink-fine);
+  font-size: clamp(0.92rem, 1.1vw, 1.04rem);
+  font-weight: 500;
+  line-height: 1.7;
+  text-wrap: pretty;
 }
 
 .takeaway-why p + p {
-  margin-top: 0.55rem;
-}
-
-.takeaway-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.7rem;
-  margin-top: 1.25rem;
-}
-
-.takeaway-primary-button,
-.takeaway-secondary-button {
-  padding: 0.75rem 1.05rem;
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.takeaway-primary-button {
-  color: #fff;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(44, 162, 95, 0.98),
-      rgba(31, 126, 74, 0.82)
-    );
-  box-shadow: 0 8px 20px rgba(44, 162, 95, 0.22);
-}
-
-.takeaway-secondary-button {
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  color: #222;
-  background: rgba(255, 255, 255, 0.58);
-}
-
-.takeaway-primary-button:hover {
-  transform: translateY(-1px);
-}
-
-.takeaway-secondary-button:hover {
-  background: rgba(255, 255, 255, 0.82);
+  margin-top: 1.3em;
 }
 
 /* =========================================================
-   Improved dark takeaway
+   Actions
+
+   The primary shares the intro's CTA outright - paper face,
+   ink wipe, 4px corner. It is the same promise being made at
+   the other end of the piece, so it is the same object.
    ========================================================= */
 
-:root[data-theme="dark"] .takeaway-overlay {
-  background:
-    radial-gradient(
-      circle at 16% 18%,
-      rgba(44, 162, 95, 0.14),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 84% 78%,
-      rgba(44, 104, 145, 0.13),
-      transparent 32%
-    ),
-    rgba(3, 12, 14, 0.72);
+.takeaway-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  margin-top: clamp(2.25rem, 6vh, 4.5rem);
 }
 
-:root[data-theme="dark"] .takeaway-card {
-  color: #f5f8f6;
-  border-color: rgba(255, 255, 255, 0.13);
-  background:
-    radial-gradient(
-      circle at 0% 0%,
-      rgba(42, 134, 91, 0.16),
-      transparent 32%
-    ),
-    radial-gradient(
-      circle at 100% 100%,
-      rgba(38, 92, 124, 0.14),
-      transparent 34%
-    ),
-    linear-gradient(
-      145deg,
-      rgba(14, 34, 33, 0.98),
-      rgba(6, 20, 24, 0.97)
+/* Quiet by design: one primary object per screen, as in the
+   intro, where the only button competing with "Start the tour"
+   was nothing at all. The tour's "Skip Tour" shares this same
+   quiet treatment against "Next" for the same reason. */
+
+.takeaway-secondary-button,
+.tour-secondary-button {
+  padding: 0.5rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--splash-ink-faint);
+  background: none;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.32em;
+  text-decoration-color: light-dark(
+    rgba(0, 0, 0, 0.25),
+    rgba(255, 255, 255, 0.3)
+  );
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .takeaway-secondary-button:hover,
+  .tour-secondary-button:hover {
+    color: var(--splash-ink);
+    background: none;
+    text-decoration-color: currentColor;
+  }
+}
+
+/* =========================================================
+   Close
+
+   A hairline circle rather than a filled chip. The screen has
+   no card for it to sit on any more, and a solid disc on open
+   paper reads as a stray element.
+   ========================================================= */
+
+.takeaway-close-button {
+  position: fixed;
+  top: clamp(1rem, 2.5vh, 1.75rem);
+  right: clamp(1rem, 2.5vw, 1.75rem);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 40px is the floor for a comfortable target; the ring is
+     drawn at that size rather than padded up to it. */
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid light-dark(
+    rgba(0, 0, 0, 0.16),
+    rgba(255, 255, 255, 0.22)
+  );
+  border-radius: var(--r-full);
+  color: var(--splash-ink);
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .takeaway-close-button:hover {
+    border-color: light-dark(
+      rgba(0, 0, 0, 0.34),
+      rgba(255, 255, 255, 0.42)
     );
-  box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-:root[data-theme="dark"] .takeaway-kicker {
-  color: #41c884;
-}
-
-:root[data-theme="dark"] .takeaway-card > h2 {
-  color: #f7faf8;
-  font-weight: 760;
-  letter-spacing: -0.035em;
-  text-shadow: 0 3px 20px rgba(0, 0, 0, 0.28);
-}
-
-:root[data-theme="dark"] .takeaway-lead {
-  color: rgba(231, 239, 234, 0.84);
-}
-
-:root[data-theme="dark"] .takeaway-point {
-  border-color: rgba(255, 255, 255, 0.11);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 14px 32px rgba(0, 0, 0, 0.18);
-}
-
-:root[data-theme="dark"] .takeaway-point--and {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(36, 125, 82, 0.25),
-      rgba(14, 45, 36, 0.72)
+    background: light-dark(
+      rgba(0, 0, 0, 0.04),
+      rgba(255, 255, 255, 0.07)
     );
+  }
 }
 
-:root[data-theme="dark"] .takeaway-point--but {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(154, 83, 60, 0.24),
-      rgba(43, 35, 31, 0.76)
-    );
-}
-
-:root[data-theme="dark"] .takeaway-point--therefore {
-  background:
-    linear-gradient(
-      145deg,
-      rgba(29, 82, 116, 0.28),
-      rgba(9, 31, 43, 0.8)
-    );
-}
-
-:root[data-theme="dark"] .takeaway-label {
-  background: rgba(255, 255, 255, 0.09);
-}
-
-:root[data-theme="dark"] .takeaway-point--and .takeaway-label {
-  color: #4ed08b;
-}
-
-:root[data-theme="dark"] .takeaway-point--but .takeaway-label {
-  color: #ff8a68;
-}
-
-:root[data-theme="dark"] .takeaway-point--therefore .takeaway-label {
-  color: #75bfff;
-}
-
-:root[data-theme="dark"] .takeaway-point h3 {
-  color: #f4f7f5;
-  font-weight: 720;
-}
-
-:root[data-theme="dark"] .takeaway-point p {
-  color: rgba(225, 233, 228, 0.82);
-}
-
-:root[data-theme="dark"] .takeaway-why {
-  border-color: rgba(255, 255, 255, 0.1);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(30, 54, 55, 0.86),
-      rgba(15, 32, 36, 0.9)
-    );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 14px 32px rgba(0, 0, 0, 0.18);
-}
-
-:root[data-theme="dark"] .takeaway-why h3 {
-  color: #f4f7f5;
-  font-weight: 720;
-}
-
-:root[data-theme="dark"] .takeaway-why p {
-  color: rgba(224, 233, 228, 0.8);
-}
-
-:root[data-theme="dark"] .takeaway-close-button {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #e9efeb;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-:root[data-theme="dark"] .takeaway-close-button:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-:root[data-theme="dark"] .takeaway-secondary-button {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #eef3ef;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-:root[data-theme="dark"] .takeaway-secondary-button:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-theme="auto"] .takeaway-overlay {
-    background:
-      radial-gradient(
-        circle at 16% 18%,
-        rgba(44, 162, 95, 0.14),
-        transparent 34%
-      ),
-      radial-gradient(
-        circle at 84% 78%,
-        rgba(44, 104, 145, 0.13),
-        transparent 32%
-      ),
-      rgba(3, 12, 14, 0.72);
-  }
-
-  :root[data-theme="auto"] .takeaway-card {
-    color: #f5f8f6;
-    border-color: rgba(255, 255, 255, 0.13);
-    background:
-      radial-gradient(
-        circle at 0% 0%,
-        rgba(42, 134, 91, 0.16),
-        transparent 32%
-      ),
-      radial-gradient(
-        circle at 100% 100%,
-        rgba(38, 92, 124, 0.14),
-        transparent 34%
-      ),
-      linear-gradient(
-        145deg,
-        rgba(14, 34, 33, 0.98),
-        rgba(6, 20, 24, 0.97)
-      );
-    box-shadow:
-      0 30px 90px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  :root[data-theme="auto"] .takeaway-kicker {
-    color: #41c884;
-  }
-
-  :root[data-theme="auto"] .takeaway-card > h2 {
-    color: #f7faf8;
-    font-weight: 760;
-    letter-spacing: -0.035em;
-    text-shadow: 0 3px 20px rgba(0, 0, 0, 0.28);
-  }
-
-  :root[data-theme="auto"] .takeaway-lead {
-    color: rgba(231, 239, 234, 0.84);
-  }
-
-  :root[data-theme="auto"] .takeaway-point {
-    border-color: rgba(255, 255, 255, 0.11);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 14px 32px rgba(0, 0, 0, 0.18);
-  }
-
-  :root[data-theme="auto"] .takeaway-point--and {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(36, 125, 82, 0.25),
-        rgba(14, 45, 36, 0.72)
-      );
-  }
-
-  :root[data-theme="auto"] .takeaway-point--but {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(154, 83, 60, 0.24),
-        rgba(43, 35, 31, 0.76)
-      );
-  }
-
-  :root[data-theme="auto"] .takeaway-point--therefore {
-    background:
-      linear-gradient(
-        145deg,
-        rgba(29, 82, 116, 0.28),
-        rgba(9, 31, 43, 0.8)
-      );
-  }
-
-  :root[data-theme="auto"] .takeaway-label {
-    background: rgba(255, 255, 255, 0.09);
-  }
-
-  :root[data-theme="auto"] .takeaway-point--and .takeaway-label {
-    color: #4ed08b;
-  }
-
-  :root[data-theme="auto"] .takeaway-point--but .takeaway-label {
-    color: #ff8a68;
-  }
-
-  :root[data-theme="auto"] .takeaway-point--therefore .takeaway-label {
-    color: #75bfff;
-  }
-
-  :root[data-theme="auto"] .takeaway-point h3 {
-    color: #f4f7f5;
-    font-weight: 720;
-  }
-
-  :root[data-theme="auto"] .takeaway-point p {
-    color: rgba(225, 233, 228, 0.82);
-  }
-
-  :root[data-theme="auto"] .takeaway-why {
-    border-color: rgba(255, 255, 255, 0.1);
-    background:
-      linear-gradient(
-        145deg,
-        rgba(30, 54, 55, 0.86),
-        rgba(15, 32, 36, 0.9)
-      );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      0 14px 32px rgba(0, 0, 0, 0.18);
-  }
-
-  :root[data-theme="auto"] .takeaway-why h3 {
-    color: #f4f7f5;
-    font-weight: 720;
-  }
-
-  :root[data-theme="auto"] .takeaway-why p {
-    color: rgba(224, 233, 228, 0.8);
-  }
-
-  :root[data-theme="auto"] .takeaway-close-button {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #e9efeb;
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  :root[data-theme="auto"] .takeaway-secondary-button {
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #eef3ef;
-    background: rgba(255, 255, 255, 0.08);
+@media (prefers-reduced-motion: reduce) {
+  .takeaway-rise {
+    translate: 0 0;
+    filter: blur(0);
   }
 }
 
@@ -2483,8 +3688,21 @@ body.takeaway-open .takeaway-overlay {
     -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
 
+  /* The wordmark shrinks and sheds its secondary row rather
+     than vanishing - a site that stops naming itself on a
+     tablet leaves the reader with no answer to "where am I". */
+
   .brand {
-    display: none;
+    order: 0;
+    width: 100%;
+    padding: var(--space-2) 0 0;
+    text-align: center;
+  }
+
+  .brand-actions {
+    justify-content: center;
+    gap: var(--space-4);
+    margin-top: 0.15rem;
   }
 
   .compare-tabs {
@@ -2516,27 +3734,30 @@ body.takeaway-open .takeaway-overlay {
     background: rgba(255, 255, 255, 0.42);
   }
 
-  .region-jump select {
-    width: min(420px, 75vw);
-    max-width: 420px;
+  /* Centred and full-width like the tabs above it, so the
+     accordion drops open in place rather than hanging off a
+     trigger that is no longer pinned to the right edge. */
+
+  .region-accordion {
+    position: static;
+    width: 100%;
   }
 
-  .theme-switcher {
-    flex: 0 0 auto;
+  .region-options {
+    align-items: center;
+  }
+
+  .region-option {
+    text-align: center;
   }
 
   .mapboxgl-ctrl-top-right {
     top: 115px;
-    right: 10px;
-  }
-
-  .story-panel {
-    bottom: 7.5rem;
+    right: var(--rail-x);
   }
 
   .map-legend {
-    max-width: calc(100% - 1.5rem);
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   .map-legend-row {
@@ -2561,6 +3782,15 @@ body.takeaway-open .takeaway-overlay {
    ========================================================= */
 
 @media (max-width: 650px) {
+  :root {
+    --rail-x: 0.75rem;
+    --rail-y: 0.75rem;
+
+    /* The legend collapses to one scrolling row here, so the
+       clearance the story panel leaves for it comes down too. */
+    --legend-h: 2.7rem;
+  }
+
   .map-stage,
   #single-map,
   #compare-view,
@@ -2576,7 +3806,15 @@ body.takeaway-open .takeaway-overlay {
   }
 
   .brand {
-    display: none;
+    width: 100%;
+    padding: var(--space-2) 0 0;
+    text-align: center;
+  }
+
+  .brand-actions {
+    justify-content: center;
+    gap: var(--space-4);
+    margin-top: 0.15rem;
   }
 
   .compare-tabs {
@@ -2603,30 +3841,7 @@ body.takeaway-open .takeaway-overlay {
     justify-content: center;
     width: 100%;
     padding: 0.45rem 0.65rem;
-    gap: 0.45rem;
     background: rgba(255, 255, 255, 0.42);
-  }
-
-  .region-jump label,
-  .theme-switcher label {
-    display: none;
-  }
-
-  .region-jump select,
-  .theme-switcher select {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
-    padding: 0.55rem 0.7rem;
-    font-size: 0.9rem;
-  }
-
-  .region-jump select {
-    flex: 1;
-  }
-
-  .theme-switcher {
-    width: 100%;
   }
 
   .mapboxgl-ctrl-top-right {
@@ -2634,12 +3849,22 @@ body.takeaway-open .takeaway-overlay {
     right: 8px;
   }
 
+  /* Full-bleed between the rails - at this width a 420px column
+     would leave slivers rather than margins. */
+
   .story-panel {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: var(--rail-x);
+    right: var(--rail-x);
+    bottom: calc(var(--rail-y) + var(--legend-h) + var(--space-2));
     width: auto;
     max-width: none;
+  }
+
+  /* Present mode hides the legend on mobile, so the story panel
+     takes the bottom rail back rather than leaving a gap. */
+
+  body.mode-present .story-panel {
+    bottom: var(--rail-y);
   }
 
   .story-panel h2 {
@@ -2649,17 +3874,14 @@ body.takeaway-open .takeaway-overlay {
 
   .story-panel p {
     max-height: 92px;
-    padding: 0.72rem 0.8rem;
+    padding: 0;
     overflow-y: auto;
-    border-radius: 0.8rem;
-    font-size: 0.76rem;
-    line-height: 1.42;
+    font-size: 0.78rem;
+    line-height: 1.5;
   }
 
   .map-legend {
-    left: 0.75rem;
-    bottom: 0.75rem;
-    max-width: calc(100% - 1.5rem);
+    max-width: calc(100% - 2 * var(--rail-x));
     padding: 0.35rem 0.45rem;
     gap: 0.55rem;
     overflow-x: auto;
@@ -2686,36 +3908,60 @@ body.takeaway-open .takeaway-overlay {
     z-index: 42;
     display: none;
     padding: 0.6rem 0.85rem;
-    border: 0;
-    border-radius: 999px;
-    color: white;
-    background:
-      linear-gradient(
-        135deg,
-        rgba(17, 17, 17, 0.94),
-        rgba(17, 17, 17, 0.76)
-      );
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-    font: inherit;
     font-size: 0.78rem;
-    font-weight: 700;
   }
 
   body.mode-change .mobile-chart-toggle {
-    display: block;
+    display: inline-flex;
   }
 
   .chart-panel {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: var(--rail-x);
+    right: var(--rail-x);
+    bottom: var(--rail-y);
     width: auto;
     max-width: none;
-    padding: 0.75rem 0.85rem;
+    padding: 0;
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transform: translateY(1rem);
+
+    /* No transform - it would trap the fixed wash in this box, the
+       same way the desktop entrance did. */
+  }
+
+  /* The drawer spans the screen here, so the wash has to as well,
+     and it comes up from the bottom rather than in from a side. */
+
+  .chart-panel::before {
+    top: 0;
+    width: 100%;
+    background:
+      linear-gradient(
+        to top,
+        light-dark(
+          rgba(245, 244, 239, 0.85),
+          rgba(4, 12, 11, 0.84)
+        ) 0%,
+        light-dark(
+          rgba(245, 244, 239, 0.81),
+          rgba(4, 12, 11, 0.8)
+        ) 30%,
+        light-dark(
+          rgba(245, 244, 239, 0.66),
+          rgba(4, 12, 11, 0.66)
+        ) 52%,
+        light-dark(
+          rgba(245, 244, 239, 0.4),
+          rgba(4, 12, 11, 0.42)
+        ) 72%,
+        light-dark(
+          rgba(245, 244, 239, 0.15),
+          rgba(4, 12, 11, 0.17)
+        ) 90%,
+        transparent 100%
+      );
+    mask-image: none;
   }
 
   body.mode-change .chart-panel {
@@ -2728,7 +3974,24 @@ body.takeaway-open .takeaway-overlay {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
-    transform: translateY(0);
+  }
+
+  /* With the drawer open, everything else on the lower half has to
+     clear out. All three are unboxed now, so they no longer hide
+     each other by sitting on opaque cards - the story copy and the
+     legend were reading straight through the figures. */
+
+  body.mobile-chart-open .story-panel,
+  body.mobile-chart-open .map-legend,
+  body.mobile-chart-open .mobile-chart-toggle {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .story-panel,
+  .map-legend,
+  .mobile-chart-toggle {
+    transition: opacity 0.25s ease;
   }
 
   .chart-close-button {
@@ -2739,122 +4002,98 @@ body.takeaway-open .takeaway-overlay {
     display: none;
   }
 
-  .compare-switch {
-    bottom: 22%;
-  }
-
   .split-line {
-    width: 3px;
+    width: 1px;
   }
 
-  .about-modal,
-  .tour-overlay {
-    padding: 1rem;
+  .about-modal {
+    justify-content: flex-start;
+    padding: 4.5rem 1.25rem 3rem;
   }
 
   .tour-overlay {
     align-items: flex-end;
     justify-content: center;
+    padding: 1rem;
   }
 
   .tour-card {
     width: 100%;
-    margin-right: 0;
-    padding: 1.25rem;
+    padding: 0;
   }
 
-  .splash-screen {
-    align-items: flex-start;
-    padding: 1rem;
+  .splash-content {
+    justify-content: flex-start;
+    padding: 7vh 1.25rem 3rem;
   }
 
-  .splash-card {
-    max-height: none;
-    padding: 1.35rem;
-    border-radius: 1.1rem;
+  .splash-globe {
+    width: 86vw;
+    height: 86vw;
   }
 
-  .splash-card h1 {
-    font-size: 2.25rem;
+  /* A narrow viewport leaves less room to hide a blur's soft
+     edge, so the map overscans a little further. */
+
+  body:has(.splash-screen:not([data-stage="2"])) #single-map {
+    filter: blur(30px) var(--splash-map-grade);
+    scale: 1.18;
   }
 
-  .splash-card > p {
+  .splash-screen h1 {
+    font-size: clamp(2.4rem, 13.5vw, 3.6rem);
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+  }
+
+  .splash-detail-text {
     font-size: 0.88rem;
-    line-height: 1.5;
-  }
-
-  .splash-explanation {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-    margin-top: 0.9rem;
-  }
-
-  .splash-explanation-item {
-    padding: 0.7rem 0.8rem;
+    line-height: 1.55;
   }
 
   .splash-legend {
-    gap: 0.55rem;
-    margin: 1rem 0;
+    margin-top: clamp(2rem, 5vh, 3rem);
   }
 
-  .legend-chip {
-    width: 100%;
-    justify-content: flex-start;
-    padding: 0.5rem 0.65rem;
-    font-size: 0.76rem;
+  .legend-scales {
+    gap: 0.55rem 0.6rem;
+  }
+
+  .legend-cap {
+    font-size: 0.82rem;
+  }
+
+  .legend-note {
+    font-size: 0.85rem;
   }
 
   .start-button {
     width: 100%;
   }
 
-  .takeaway-overlay {
-    align-items: flex-end;
-    padding: 0.75rem;
-  }
+  /* The column reads top-down on a phone, so it starts at the top
+     and scrolls rather than trying to centre a page-length screen. */
 
-  .takeaway-card {
-    max-height: 92dvh;
-    padding: 1.25rem;
-    border-radius: 1.2rem;
+  .takeaway-overlay {
+    justify-content: flex-start;
+    padding: 4.5rem 1.25rem 3rem;
   }
 
   .takeaway-card > h2 {
-    padding-right: 1.8rem;
-    font-size: 1.75rem;
-  }
-
-  .takeaway-lead {
-    font-size: 0.88rem;
-    line-height: 1.55;
+    max-width: none;
   }
 
   .takeaway-grid {
     grid-template-columns: 1fr;
-    gap: 0.65rem;
-    margin-top: 1rem;
-  }
-
-  .takeaway-point {
-    padding: 0.85rem;
-  }
-
-  .takeaway-point p,
-  .takeaway-why p {
-    font-size: 0.78rem;
-  }
-
-  .takeaway-why {
-    padding: 0.85rem;
+    gap: clamp(1.25rem, 3vh, 1.75rem);
   }
 
   .takeaway-actions {
     flex-direction: column-reverse;
+    gap: 1rem;
   }
 
-  .takeaway-primary-button,
-  .takeaway-secondary-button {
+  .takeaway-primary-button {
     width: 100%;
   }
 
@@ -2876,6 +4115,12 @@ body.takeaway-open .takeaway-overlay {
    ========================================================= */
 
 @media (max-width: 420px) {
+  :root {
+    --rail-x: 0.55rem;
+    --rail-y: 0.55rem;
+    --legend-h: 2.5rem;
+  }
+
   .compare-tab {
     padding: 0.5rem 0.12rem;
     font-size: 0.6rem;
@@ -2885,19 +4130,12 @@ body.takeaway-open .takeaway-overlay {
     padding: 0.38rem 0.55rem;
   }
 
-  .region-jump select,
-  .theme-switcher select {
+  .region-trigger {
     font-size: 0.78rem;
   }
 
   .mapboxgl-ctrl-top-right {
     top: 110px;
-  }
-
-  .story-panel {
-    left: 0.55rem;
-    right: 0.55rem;
-    bottom: 0.55rem;
   }
 
   .story-panel h2 {
@@ -2910,9 +4148,10 @@ body.takeaway-open .takeaway-overlay {
     line-height: 1.35;
   }
 
-  .takeaway-card > h2 {
-    font-size: 1.5rem;
-  }
+  /* No size override here. The clamp already floors at 2.1rem, and
+     the intro's title floors at 2.4rem - dropping this one to 1.5rem
+     made the closing statement smaller than the opening one on the
+     screens where they are most directly compared. */
 
   .takeaway-kicker {
     font-size: 0.68rem;

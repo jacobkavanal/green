@@ -59,6 +59,17 @@ if (window.innerWidth <= 650) {
    Story text
    ========================================================= */
 
+/* Names for the summary panel. These label a place, where storyText
+   titles make an argument about it - the panel needs the former, and
+   reusing the latter had it echo the story heading word for word. */
+
+const regionLabels = {
+  global: "Global overview",
+  amazon: "Amazon Basin",
+  sahel: "Sahel and West Africa",
+  china: "Northern China"
+};
+
 const storyText = {
   global: {
     title: "A Greener Global Picture",
@@ -147,31 +158,13 @@ const regionBounds = {
    Data files
    ========================================================= */
 
-const spikeFilesByDetail = {
-  "2000": {
-    low: "data/actual_ndvi_spikes_2000_low.json",
-    medium: "data/actual_ndvi_spikes_2000_medium.json",
-    high: "data/actual_ndvi_spikes_2000_high.json"
-  },
+/*
+  Datasets are named, not pathed. grid.js resolves a (dataset, detail) pair to
+  a file through data/grid/manifest.json.
+*/
+const spikeDatasets = ["2000", "2013", "2025"];
 
-  "2013": {
-    low: "data/actual_ndvi_spikes_2013_low.json",
-    medium: "data/actual_ndvi_spikes_2013_medium.json",
-    high: "data/actual_ndvi_spikes_2013_high.json"
-  },
-
-  "2025": {
-    low: "data/actual_ndvi_spikes_2025_low.json",
-    medium: "data/actual_ndvi_spikes_2025_medium.json",
-    high: "data/actual_ndvi_spikes_2025_high.json"
-  }
-};
-
-const changeFilesByDetail = {
-  low: "data/actual_ndvi_change_2000_2025_low.json",
-  medium: "data/actual_ndvi_change_2000_2025_medium.json",
-  high: "data/actual_ndvi_change_2000_2025_high.json"
-};
+const changeDataset = "change";
 
 const emptyGeoJSON = {
   type: "FeatureCollection",
@@ -190,13 +183,17 @@ let previousNdviBarWidths = {
   "2025": 0
 };
 
+/* Where the four headline figures were left by the last
+   region, so the next one can count from there rather than
+   being replaced between frames. Keyed by the data-figure
+   attribute the markup carries. */
+let previousChartFigures = {};
+
 let currentMode = "present";
 let activeView = "global";
 let compareBaseYear = "2000";
 let currentTourStep = 0;
-
-let cachedData = {};
-let cachedChangeData = {};
+let splashStage = 0;
 
 let syncing = false;
 let isLoadingDetail = false;
@@ -206,6 +203,17 @@ let activeDetail = {
   present: "low",
   compare: null,
   change: null
+};
+
+/*
+  What is currently on each map, as "dataset(s)@detail". Each map holds the
+  whole globe, so this only changes when the detail level or the dataset does -
+  never on a pan.
+*/
+let activeDataSignature = {
+  present: "",
+  compare: "",
+  change: ""
 };
 
 /* =========================================================
@@ -229,9 +237,15 @@ const singleMap = new mapboxgl.Map({
   ...mapOptions
 });
 
+/* Compare mode shows two maps on one page, and each was drawing its
+   own attribution bar and Mapbox logo - the page ended up with the
+   same credit twice. One set covers the view, so the left map goes
+   without and the right map carries it for both. */
+
 const leftMap = new mapboxgl.Map({
   container: "left-map",
-  ...mapOptions
+  ...mapOptions,
+  attributionControl: false
 });
 
 const rightMap = new mapboxgl.Map({
@@ -282,6 +296,82 @@ function setupGlobe(map) {
       intensity: 0
     });
   }
+}
+
+/*
+  Change mode draws growth and decline over bare land, and light-v11's
+  landmass is near-white - the spikes are semi-transparent, so they were
+  landing on a ground almost as bright as they are and the view carrying
+  the project's whole argument became its least readable screen. Dark
+  theme never had the problem because its scrim already pulls the land
+  down.
+
+  Grading the `land` background layer fixes it where the problem is. The
+  first attempt was a full-viewport multiply overlay, which did darken
+  the land but greyed the page around the globe with it - it changed the
+  character of the whole screen to fix one layer of it.
+
+  Present and compare modes cover the land with spikes almost edge to
+  edge, so they keep the original light ground.
+*/
+
+const LAND_GRADE_CHANGE = "#6c756f";
+
+let landOriginalPaint = null;
+
+/*
+  Place labels were tuned by Mapbox against a near-white ground. Once the
+  land is graded down they become the highest-contrast thing on the globe
+  and start competing with the data they are supposed to sit behind, so
+  they settle back by the same amount the land moves.
+*/
+const LABEL_OPACITY_CHANGE = 0.45;
+
+function labelLayerIds(map) {
+  const style = map.getStyle();
+
+  if (!style || !Array.isArray(style.layers)) {
+    return [];
+  }
+
+  return style.layers
+    .filter(layer => layer.type === "symbol")
+    .map(layer => layer.id);
+}
+
+function setLandGrade(map, graded) {
+  if (!map.getLayer("land")) {
+    return;
+  }
+
+  /* Captured once, from whichever map reports first - all three load
+     the same style, so one snapshot restores any of them. */
+  if (landOriginalPaint === null) {
+    landOriginalPaint =
+      map.getPaintProperty("land", "background-color") ?? null;
+  }
+
+  try {
+    map.setPaintProperty(
+      "land",
+      "background-color",
+      graded ? LAND_GRADE_CHANGE : landOriginalPaint
+    );
+  } catch (error) {
+    /* A style reload can land mid-call; the next setMode fixes it. */
+  }
+
+  labelLayerIds(map).forEach(id => {
+    try {
+      map.setPaintProperty(
+        id,
+        "text-opacity",
+        graded ? LABEL_OPACITY_CHANGE : 1
+      );
+    } catch (error) {
+      /* Not every symbol layer draws text. */
+    }
+  });
 }
 
 function setDarkOcean(map) {
@@ -394,9 +484,7 @@ async function initAllMaps() {
 
   updateSplashStatus("Loading 2025 vegetation layer...");
 
-  const data2025Low = await getGeoJSON("2025", "low");
-
-  setupMapLayer(singleMap, data2025Low, "present");
+  setupMapLayer(singleMap, emptyGeoJSON, "present");
   setupMapLayer(leftMap, emptyGeoJSON, "compare");
   setupMapLayer(rightMap, emptyGeoJSON, "compare");
 
@@ -428,18 +516,20 @@ async function initAllMaps() {
 
   currentMode = "present";
   activeView = "global";
-  activeDetail.present = "low";
 
   jumpMapTo(singleMap, views.global);
   jumpMapTo(leftMap, views.global);
   jumpMapTo(rightMap, views.global);
 
   resizeMaps();
+
+  /* Camera is in place, so the visible tiles are now known. */
+  await refreshVisibleData(true);
+
   preloadLikelyNextFiles();
 
   appReady = true;
 
-  updateSplashStatus("Map ready. Click Start to explore.");
   enableStartButton();
 }
 
@@ -447,28 +537,78 @@ async function initAllMaps() {
    Theme
    ========================================================= */
 
-function setupThemeSwitcher() {
-  const themeSelect = document.querySelector("#theme-select");
+/* Theme is a preference, not one of the three primary modes, so it
+   reads as a single control beside the brand rather than a labelled
+   dropdown sitting at the same weight as the mode nav. One button
+   cycling auto -> light -> dark: three states is short enough that
+   cycling stays predictable, and the button always names the state
+   it is currently in. */
 
-  if (!themeSelect) {
+const themeOrder = [
+  "auto",
+  "light",
+  "dark"
+];
+
+const themeLabels = {
+  auto: "Auto",
+  light: "Light",
+  dark: "Dark"
+};
+
+function setupThemeSwitcher() {
+  const toggle = document.querySelector("#theme-toggle");
+
+  if (!toggle) {
     return;
   }
 
-  const savedTheme =
+  const labels =
+    toggle.querySelectorAll(".theme-toggle-label");
+
+  let current =
     localStorage.getItem("theme-preference") || "auto";
 
-  document.documentElement.dataset.theme = savedTheme;
-  themeSelect.value = savedTheme;
+  function applyTheme(next) {
+    current = next;
 
-  themeSelect.addEventListener("change", () => {
-    const selectedTheme = themeSelect.value;
+    document.documentElement.dataset.theme = next;
 
     localStorage.setItem(
       "theme-preference",
-      selectedTheme
+      next
     );
 
-    document.documentElement.dataset.theme = selectedTheme;
+    labels.forEach(label => {
+      label.textContent = themeLabels[next];
+    });
+
+    toggle.dataset.theme = next;
+
+    /* The visible label only says the current state, so the
+       accessible name has to carry what pressing it will do. */
+    toggle.setAttribute(
+      "aria-label",
+      `Theme: ${themeLabels[next]}. Switch to ${
+        themeLabels[nextTheme(next)]
+      }.`
+    );
+  }
+
+  function nextTheme(from) {
+    const index = themeOrder.indexOf(from);
+
+    return themeOrder[
+      (index + 1) % themeOrder.length
+    ];
+  }
+
+  applyTheme(
+    themeOrder.includes(current) ? current : "auto"
+  );
+
+  toggle.addEventListener("click", () => {
+    applyTheme(nextTheme(current));
   });
 }
 
@@ -476,47 +616,59 @@ function setupThemeSwitcher() {
    Data loading
    ========================================================= */
 
+/*
+  Warm the medium grids, which the region charts need and which a first zoom
+  is likely to want. These are ~0.7 MB each now, so this costs about as much
+  as a photograph.
+*/
 function preloadLikelyNextFiles() {
   window.setTimeout(() => {
-    getGeoJSON("2025", "medium").catch(console.error);
-    getGeoJSON("2000", "medium").catch(console.error);
-    getGeoJSON("2013", "medium").catch(console.error);
-    getChangeGeoJSON("medium").catch(console.error);
+    spikeDatasets.forEach(year => {
+      loadGrid(year, "medium").catch(console.error);
+    });
+
+    loadGrid(changeDataset, "medium")
+      .catch(console.error);
+
+    /*
+      Build the collection a first zoom-in will land on, while the browser is
+      otherwise idle, so crossing the detail threshold does not have to pay for
+      it. Only the one the user is most likely to hit - building all of them
+      would blow past the cache budget and evict what is on screen.
+    */
+    const buildAhead = () => {
+      globeCollection("2025", "medium")
+        .catch(console.error);
+    };
+
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(buildAhead, {
+        timeout: 4000
+      });
+    } else {
+      window.setTimeout(buildAhead, 2500);
+    }
   }, 1500);
 }
 
-async function getGeoJSON(year, detail) {
-  const key = `${year}-${detail}`;
+async function applyDatasetToMap(
+  map,
+  sourceId,
+  dataset,
+  detail
+) {
+  const collection = await globeCollection(
+    dataset,
+    detail
+  );
 
-  if (!cachedData[key]) {
-    cachedData[key] = loadGeoJSON(
-      spikeFilesByDetail[year][detail]
-    );
+  const source = map.getSource(sourceId);
+
+  if (source) {
+    source.setData(collection);
   }
 
-  return cachedData[key];
-}
-
-async function getChangeGeoJSON(detail) {
-  if (!cachedChangeData[detail]) {
-    cachedChangeData[detail] = loadGeoJSON(
-      changeFilesByDetail[detail]
-    );
-  }
-
-  return cachedChangeData[detail];
-}
-
-async function loadGeoJSON(path) {
-  const response = await fetch(path);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to load ${path}: ${response.status}`
-    );
-  }
-
-  return response.json();
+  return collection;
 }
 
 /* =========================================================
@@ -612,23 +764,45 @@ function getSpikePaint(mode) {
   };
 }
 
+/* Cells the pipeline found no measurable change in - see buildChangeFeatures()
+   in grid.js - are drawn as flat grey plates rather than spikes.
+
+   The shortest real spike is exactly CHANGE_THRESHOLD * 320000 (8,000 m), so
+   anything under that is already unambiguous. This is set far lower - at the
+   same 300 m floor ndvi_to_height() uses - because the plates are wide and
+   pale, and a wide pale top face reads as taller than it is. Below roughly
+   this point the extrusion contributes nothing visible either way, and the
+   blocks are carried by STILL_COLOR alone. */
+const STILL_COLOR = "#e2e2d8";
+const STILL_HEIGHT = 300;
+
 function getChangePaint() {
   return {
     "fill-extrusion-color": [
       "case",
+      ["==", ["get", "still"], 1],
+      STILL_COLOR,
+
       [">", ["get", "change"], 0],
       "#2ca25f",
+
       "#e76f51"
     ],
 
     "fill-extrusion-height": [
-      "min",
+      "case",
+      ["==", ["get", "still"], 1],
+      STILL_HEIGHT,
+
       [
-        "*",
-        ["abs", ["get", "change"]],
-        320000
-      ],
-      65000
+        "min",
+        [
+          "*",
+          ["abs", ["get", "change"]],
+          320000
+        ],
+        65000
+      ]
     ],
 
     "fill-extrusion-base": 0,
@@ -692,50 +866,70 @@ function debounce(func, wait) {
   };
 }
 
+/*
+  The detail level follows the camera's zoom. `moveend` covers zooming as well
+  as panning; a pan leaves the signature unchanged, so refreshVisibleData()
+  returns immediately and panning stays free.
+*/
 function setupDetailSwitching() {
-  const handleSingleZoom = debounce(async () => {
+  const handleSingleMove = debounce(() => {
     if (
       currentMode === "present" ||
       currentMode === "change"
     ) {
-      await loadDetailForCurrentView(
-        activeView,
-        getCurrentCamera(singleMap)
-      );
+      refreshVisibleData();
     }
-  }, 300);
+  }, 250);
 
-  const handleCompareZoom = debounce(async map => {
+  const handleCompareMove = debounce(() => {
     if (currentMode === "compare") {
-      await loadDetailForCurrentView(
-        activeView,
-        getCurrentCamera(map)
-      );
+      refreshVisibleData();
     }
-  }, 300);
+  }, 250);
 
-  singleMap.on("zoomend", handleSingleZoom);
-
-  leftMap.on("zoomend", () => {
-    handleCompareZoom(leftMap);
-  });
-
-  rightMap.on("zoomend", () => {
-    handleCompareZoom(rightMap);
-  });
+  singleMap.on("moveend", handleSingleMove);
+  leftMap.on("moveend", handleCompareMove);
+  rightMap.on("moveend", handleCompareMove);
 }
 
-async function loadDetailForCurrentView(viewName, view) {
-  if (isLoadingDetail || !view) {
+/*
+  Bring the active mode's maps in line with the current camera.
+
+  Each map holds the whole globe, so this is a no-op for panning: only a change
+  of detail level (or of which dataset feeds a map) produces new work. That is
+  the whole point - setData() reprocesses an entire source, so it must not be
+  on the pan path.
+*/
+async function refreshVisibleData(force = false) {
+  if (isLoadingDetail) {
+    return;
+  }
+
+  const referenceMap =
+    currentMode === "compare" ? leftMap : singleMap;
+
+  const camera = getCurrentCamera(referenceMap);
+
+  if (!camera) {
     return;
   }
 
   const detail =
     currentMode === "change"
-      ? changeDetailFromZoom(view.zoom, viewName)
-      : detailFromZoom(view.zoom, viewName);
+      ? changeDetailFromZoom(camera.zoom, activeView)
+      : detailFromZoom(camera.zoom, activeView);
 
-  if (detail === activeDetail[currentMode]) {
+  const signature =
+    currentMode === "compare"
+      ? `${compareBaseYear}+2025@${detail}`
+      : currentMode === "change"
+        ? `change@${detail}`
+        : `2025@${detail}`;
+
+  if (
+    !force &&
+    signature === activeDataSignature[currentMode]
+  ) {
     return;
   }
 
@@ -743,61 +937,46 @@ async function loadDetailForCurrentView(viewName, view) {
 
   try {
     if (currentMode === "present") {
-      const data2025 = await getGeoJSON(
+      await applyDatasetToMap(
+        singleMap,
+        "spikes",
         "2025",
         detail
       );
-
-      const source =
-        singleMap.getSource("spikes");
-
-      if (source) {
-        source.setData(data2025);
-      }
-
-      activeDetail.present = detail;
     }
 
     if (currentMode === "compare") {
-      const [leftData, rightData] =
-        await Promise.all([
-          getGeoJSON(compareBaseYear, detail),
-          getGeoJSON("2025", detail)
-        ]);
+      await Promise.all([
+        applyDatasetToMap(
+          leftMap,
+          "spikes",
+          compareBaseYear,
+          detail
+        ),
 
-      const leftSource =
-        leftMap.getSource("spikes");
-
-      const rightSource =
-        rightMap.getSource("spikes");
-
-      if (leftSource) {
-        leftSource.setData(leftData);
-      }
-
-      if (rightSource) {
-        rightSource.setData(rightData);
-      }
-
-      activeDetail.compare = detail;
+        applyDatasetToMap(
+          rightMap,
+          "spikes",
+          "2025",
+          detail
+        )
+      ]);
     }
 
     if (currentMode === "change") {
-      const changeData =
-        await getChangeGeoJSON(detail);
-
-      const source =
-        singleMap.getSource("change-spikes");
-
-      if (source) {
-        source.setData(changeData);
-      }
-
-      activeDetail.change = detail;
+      await applyDatasetToMap(
+        singleMap,
+        "change-spikes",
+        changeDataset,
+        detail
+      );
     }
+
+    activeDetail[currentMode] = detail;
+    activeDataSignature[currentMode] = signature;
   } catch (error) {
     console.error(
-      "Unable to change map detail:",
+      "Unable to refresh map data:",
       error
     );
   } finally {
@@ -847,29 +1026,8 @@ function setupCompareYearSwitch() {
         return;
       }
 
-      const camera =
-        getCurrentCamera(leftMap);
-
-      const detail =
-        detailFromZoom(
-          camera.zoom,
-          activeView
-        );
-
-      const data =
-        await getGeoJSON(
-          compareBaseYear,
-          detail
-        );
-
-      const source =
-        leftMap.getSource("spikes");
-
-      if (source) {
-        source.setData(data);
-      }
-
-      activeDetail.compare = detail;
+      /* The left map now shows a different year over the same tiles. */
+      await refreshVisibleData(true);
     });
   });
 }
@@ -898,11 +1056,238 @@ function clearCompareMaps() {
   }
 
   activeDetail.compare = null;
+  activeDataSignature.compare = "";
+}
+
+/* =========================================================
+   Spike layer swap
+
+   Present and change are the same globe read two different
+   ways, and switching between them repaints every feature on
+   the planet. Toggling layout visibility does that inside a
+   single frame, which reads as a glitch rather than as a
+   change of subject - the one hard cut left in an app whose
+   intro is built entirely out of soft ones.
+
+   Mapbox interpolates paint properties itself, so the swap is
+   handed to it. The outgoing layer leaves first and quickly;
+   the incoming one is staged at zero opacity, sits there while
+   its data is built, and only then eases up. Staging before
+   the build is the point - fade in a layer that has no data
+   yet and the features pop in at full strength afterwards,
+   which is the hard cut again with extra steps.
+
+   Layout visibility still does the real hiding. It just waits
+   until the fade covering it has finished, so nothing is
+   rendered that cannot be seen.
+   ========================================================= */
+
+const SPIKE_FADE_OUT_MS = 220;
+const SPIKE_FADE_IN_MS = 340;
+
+/* The two fades overlap by this much, so the globe is never
+   completely stripped between them. Small on purpose: these
+   are different measurements, not two states of one thing,
+   and a long dissolve would read as a blend of the two. */
+const SPIKE_FADE_OVERLAP_MS = 90;
+
+const SPIKE_OPACITY = {
+  "spikes-layer": 0.92,
+  "change-spikes-layer": 0.72
+};
+
+/* Bumped on every mode change. A fade-out that finishes after
+   a newer switch has already re-shown the same layer must not
+   be the thing that hides it. */
+let spikeSwapToken = 0;
+
+function setSpikeOpacity(
+  map,
+  layerId,
+  value,
+  duration
+) {
+  if (
+    !map ||
+    !map.getLayer(layerId)
+  ) {
+    return;
+  }
+
+  map.setPaintProperty(
+    layerId,
+    "fill-extrusion-opacity-transition",
+    {
+      duration,
+      delay: 0
+    }
+  );
+
+  map.setPaintProperty(
+    layerId,
+    "fill-extrusion-opacity",
+    value
+  );
+}
+
+/* Hides one layer and stages the other. Returns nothing the
+   caller waits on: the outgoing fade runs over the data build
+   that follows it, which is the whole reason it is here. */
+
+function beginSpikeSwap(
+  map,
+  outgoingLayer,
+  incomingLayer,
+  animate,
+  token
+) {
+  const target =
+    SPIKE_OPACITY[incomingLayer];
+
+  if (
+    !animate ||
+    prefersReducedMotion()
+  ) {
+    if (map.getLayer(outgoingLayer)) {
+      map.setLayoutProperty(
+        outgoingLayer,
+        "visibility",
+        "none"
+      );
+    }
+
+    if (map.getLayer(incomingLayer)) {
+      map.setLayoutProperty(
+        incomingLayer,
+        "visibility",
+        "visible"
+      );
+
+      setSpikeOpacity(
+        map,
+        incomingLayer,
+        target,
+        0
+      );
+    }
+
+    return;
+  }
+
+  setSpikeOpacity(
+    map,
+    outgoingLayer,
+    0,
+    SPIKE_FADE_OUT_MS
+  );
+
+  window.setTimeout(
+    () => {
+      if (
+        token !== spikeSwapToken ||
+        !map.getLayer(outgoingLayer)
+      ) {
+        return;
+      }
+
+      map.setLayoutProperty(
+        outgoingLayer,
+        "visibility",
+        "none"
+      );
+    },
+    SPIKE_FADE_OUT_MS
+  );
+
+  /* Visible but at zero, with no transition to get there, so
+     the data arriving underneath is invisible until released. */
+  if (map.getLayer(incomingLayer)) {
+    setSpikeOpacity(
+      map,
+      incomingLayer,
+      0,
+      0
+    );
+
+    map.setLayoutProperty(
+      incomingLayer,
+      "visibility",
+      "visible"
+    );
+  }
+}
+
+/* Called once the incoming layer actually has something to
+   show. If the build outran the outgoing fade, hold back the
+   remainder of it so the two still overlap rather than the
+   new spikes landing on a bare globe. */
+
+function revealSpikes(
+  map,
+  layerId,
+  startedAt,
+  token
+) {
+  if (
+    token !== spikeSwapToken ||
+    !map ||
+    !map.getLayer(layerId)
+  ) {
+    return;
+  }
+
+  const target =
+    SPIKE_OPACITY[layerId];
+
+  if (prefersReducedMotion()) {
+    setSpikeOpacity(
+      map,
+      layerId,
+      target,
+      0
+    );
+
+    return;
+  }
+
+  const elapsed =
+    performance.now() - startedAt;
+
+  const hold = Math.max(
+    0,
+    SPIKE_FADE_OUT_MS - SPIKE_FADE_OVERLAP_MS - elapsed
+  );
+
+  window.setTimeout(
+    () => {
+      if (token !== spikeSwapToken) {
+        return;
+      }
+
+      setSpikeOpacity(
+        map,
+        layerId,
+        target,
+        SPIKE_FADE_IN_MS
+      );
+    },
+    hold
+  );
 }
 
 async function setMode(mode) {
   const previousCamera =
     getVisibleCamera() || views.global;
+
+  /* Only present and change share a globe. Every other switch
+     moves between two different map containers, and the
+     containers crossfade in CSS. */
+  const swapsSpikes =
+    (currentMode === "present" && mode === "change") ||
+    (currentMode === "change" && mode === "present");
+
+  const swapToken = ++spikeSwapToken;
+  const swapStartedAt = performance.now();
 
   currentMode = mode;
 
@@ -916,34 +1301,18 @@ async function setMode(mode) {
     `mode-${mode}`
   );
 
+  setLandGrade(
+    singleMap,
+    mode === "change"
+  );
+
+  /*
+    Camera first, data second: which tiles get built depends on where the
+    camera ends up, so every branch below positions the maps and then lets
+    refreshVisibleData() fill them.
+  */
   if (mode === "compare") {
     closeMobileChart();
-
-    const detail =
-      detailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const [leftData, rightData] =
-      await Promise.all([
-        getGeoJSON(compareBaseYear, detail),
-        getGeoJSON("2025", detail)
-      ]);
-
-    const leftSource =
-      leftMap.getSource("spikes");
-
-    const rightSource =
-      rightMap.getSource("spikes");
-
-    if (leftSource) {
-      leftSource.setData(leftData);
-    }
-
-    if (rightSource) {
-      rightSource.setData(rightData);
-    }
 
     if (leftMap.getLayer("spikes-layer")) {
       leftMap.setPaintProperty(
@@ -961,8 +1330,6 @@ async function setMode(mode) {
       );
     }
 
-    activeDetail.compare = detail;
-
     jumpMapTo(leftMap, previousCamera);
     jumpMapTo(rightMap, previousCamera);
   }
@@ -970,48 +1337,13 @@ async function setMode(mode) {
   if (mode === "present") {
     clearCompareMaps();
 
-    const detail =
-      detailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const data2025 =
-      await getGeoJSON(
-        "2025",
-        detail
-      );
-
-    const source =
-      singleMap.getSource("spikes");
-
-    if (source) {
-      source.setData(data2025);
-    }
-
-    if (singleMap.getLayer("spikes-layer")) {
-      singleMap.setLayoutProperty(
-        "spikes-layer",
-        "visibility",
-        "visible"
-      );
-
-      singleMap.setPaintProperty(
-        "spikes-layer",
-        "fill-extrusion-opacity",
-        0.92
-      );
-    }
-
-    if (singleMap.getLayer("change-spikes-layer")) {
-      singleMap.setLayoutProperty(
-        "change-spikes-layer",
-        "visibility",
-        "none"
-      );
-    }
-
-    activeDetail.present = detail;
+    beginSpikeSwap(
+      singleMap,
+      "change-spikes-layer",
+      "spikes-layer",
+      swapsSpikes,
+      swapToken
+    );
 
     if (activeView === "global") {
       jumpMapTo(singleMap, views.global);
@@ -1023,39 +1355,13 @@ async function setMode(mode) {
   if (mode === "change") {
     clearCompareMaps();
 
-    const detail =
-      changeDetailFromZoom(
-        previousCamera.zoom,
-        activeView
-      );
-
-    const changeData =
-      await getChangeGeoJSON(detail);
-
-    const source =
-      singleMap.getSource("change-spikes");
-
-    if (source) {
-      source.setData(changeData);
-    }
-
-    if (singleMap.getLayer("spikes-layer")) {
-      singleMap.setLayoutProperty(
-        "spikes-layer",
-        "visibility",
-        "none"
-      );
-    }
-
-    if (singleMap.getLayer("change-spikes-layer")) {
-      singleMap.setLayoutProperty(
-        "change-spikes-layer",
-        "visibility",
-        "visible"
-      );
-    }
-
-    activeDetail.change = detail;
+    beginSpikeSwap(
+      singleMap,
+      "spikes-layer",
+      "change-spikes-layer",
+      swapsSpikes,
+      swapToken
+    );
 
     if (activeView === "global") {
       jumpMapTo(singleMap, views.global);
@@ -1065,6 +1371,20 @@ async function setMode(mode) {
   }
 
   resizeMaps();
+
+  await refreshVisibleData(true);
+
+  /* The staged layer now has its data, so let it up. */
+  if (swapsSpikes) {
+    revealSpikes(
+      singleMap,
+      mode === "change"
+        ? "change-spikes-layer"
+        : "spikes-layer",
+      swapStartedAt,
+      swapToken
+    );
+  }
 }
 
 /* =========================================================
@@ -1072,27 +1392,139 @@ async function setMode(mode) {
    ========================================================= */
 
 function setupRegionJump() {
-  const select =
-    document.querySelector("#region-select");
+  const jump =
+    document.querySelector(".region-jump");
 
-  if (!select) {
+  const trigger =
+    document.querySelector("#region-trigger");
+
+  const options =
+    document.querySelectorAll(".region-option");
+
+  if (
+    !jump ||
+    !trigger ||
+    !options.length
+  ) {
     return;
   }
 
-  select.addEventListener("change", async () => {
-    const viewName = select.value;
+  function closeRegionJump() {
+    jump.classList.remove("open");
 
-    activeView = viewName;
+    trigger.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+  }
 
-    updateStoryPanel(viewName);
-    closeMobileChart();
+  function openRegionJump() {
+    jump.classList.add("open");
 
-    await Promise.all([
-      updateRegionCharts(viewName),
-      flyAllTo(viewName)
-    ]);
+    trigger.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+  }
+
+  trigger.addEventListener("click", () => {
+    if (jump.classList.contains("open")) {
+      closeRegionJump();
+    } else {
+      openRegionJump();
+    }
+  });
+
+  options.forEach(option => {
+    option.addEventListener("click", async () => {
+      const viewName = option.dataset.region;
+
+      closeRegionJump();
+
+      if (viewName === activeView) {
+        return;
+      }
+
+      syncRegionControl(viewName);
+
+      activeView = viewName;
+
+      updateStoryPanel(viewName);
+      closeMobileChart();
+
+      await Promise.all([
+        updateRegionCharts(viewName),
+        flyAllTo(viewName)
+      ]);
+    });
+  });
+
+  /* Closes on any click outside the control, and on Escape from
+     anywhere - the accordion floats over the map with nothing
+     else to catch focus, so both are the only ways out besides
+     picking an option. */
+
+  document.addEventListener("click", event => {
+    if (!jump.contains(event.target)) {
+      closeRegionJump();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (
+      event.key === "Escape" &&
+      jump.classList.contains("open")
+    ) {
+      closeRegionJump();
+      trigger.focus();
+    }
   });
 }
+
+/* Keeps the trigger label and the option list's selected state
+   in sync with activeView, without the side effects a real
+   selection triggers - used when something else (the splash
+   reset, the tour) moves the region under the control's feet. */
+
+function syncRegionControl(viewName) {
+  const label =
+    document.querySelector("#region-trigger-label");
+
+  if (label) {
+    label.textContent =
+      regionLabels[viewName] || regionLabels.global;
+  }
+
+  document
+    .querySelectorAll(".region-option")
+    .forEach(option => {
+      const selected =
+        option.dataset.region === viewName;
+
+      option.classList.toggle(
+        "selected",
+        selected
+      );
+
+      option.setAttribute(
+        "aria-selected",
+        selected ? "true" : "false"
+      );
+    });
+}
+
+/* Matches the exit half of .story-piece in the stylesheet.
+   Same shape as TOUR_EXIT_MS, and for the same reason: a
+   transition that never starts never fires transitionend, so
+   the swap is timed rather than listened for. */
+const STORY_EXIT_MS = 170;
+
+let storyExitTimer = 0;
+
+/* Not awaited by anything. The copy leaves, the words are
+   replaced while nothing is on screen to see it happen, and
+   the new ones rise - all of it running alongside the camera
+   flight the same click started. */
 
 function updateStoryPanel(viewName) {
   const story = storyText[viewName];
@@ -1101,19 +1533,75 @@ function updateStoryPanel(viewName) {
     return;
   }
 
+  const panel =
+    document.querySelector(".story-panel");
+
   const title =
     document.querySelector("#story-title");
 
   const text =
     document.querySelector("#story-text");
 
-  if (title) {
-    title.textContent = story.title;
+  if (
+    !title ||
+    !text
+  ) {
+    return;
   }
 
-  if (text) {
+  /* Consecutive tour steps can share a region, and the first
+     call of all restates what the markup already says. Neither
+     is a change, so neither gets played as one. */
+  if (title.textContent.trim() === story.title) {
+    return;
+  }
+
+  function swap() {
+    title.textContent = story.title;
     text.textContent = story.text;
   }
+
+  /* Nothing to clear on first paint, and nothing to play
+     against while the panel is hidden behind the tour or in
+     compare mode. */
+  const unseen =
+    !panel ||
+    document.body.classList.contains("tour-open") ||
+    currentMode === "compare";
+
+  if (unseen) {
+    swap();
+
+    if (panel) {
+      panel.dataset.phase = "in";
+    }
+
+    return;
+  }
+
+  window.clearTimeout(storyExitTimer);
+
+  panel.dataset.phase = "exit";
+
+  storyExitTimer = window.setTimeout(
+    () => {
+      swap();
+
+      panel.dataset.phase = "enter";
+
+      /* Commit the staged state before releasing it. Setting
+         both in one go collapses them into no transition at
+         all; a forced reflow flushes style synchronously and,
+         unlike rAF, is not throttled away in a background
+         tab. Same technique as playTourTextEnter(). */
+      void panel.offsetHeight;
+
+      panel.dataset.phase = "in";
+    },
+    prefersReducedMotion()
+      ? 0
+      : STORY_EXIT_MS
+  );
 }
 
 async function flyAllTo(viewName) {
@@ -1123,18 +1611,10 @@ async function flyAllTo(viewName) {
     return;
   }
 
-  const primaryMap =
-    currentMode === "compare"
-      ? leftMap
-      : singleMap;
-
-  primaryMap.once("moveend", async () => {
-    await loadDetailForCurrentView(
-      viewName,
-      getCurrentCamera(primaryMap)
-    );
-  });
-
+  /*
+    No explicit reload here: setupDetailSwitching() listens for moveend on
+    every map, so the flight's arrival triggers the refresh.
+  */
   if (currentMode === "compare") {
     mapFlyTo(leftMap, view);
     mapFlyTo(rightMap, view);
@@ -1150,6 +1630,14 @@ function mapFlyTo(map, view) {
     pitch: view.pitch,
     bearing: view.bearing,
     offset: view.offset || [0, 0],
+
+    /* Carried by the flight instead of eased separately. Two camera
+       animations on one map do not blend - the later one cancels the
+       earlier, and which one wins depends on how long the flight is
+       still running, so a standalone easeTo() for the padding was
+       silently dropped on every step that also moved. Reframing is
+       part of the move, so it travels with it. */
+    padding: tourFramingPadding(map),
     duration: 2800,
     speed: 0.45,
     curve: 1.45,
@@ -1167,7 +1655,8 @@ function jumpMapTo(map, view) {
     zoom: view.zoom,
     pitch: view.pitch,
     bearing: view.bearing,
-    offset: view.offset || [0, 0]
+    offset: view.offset || [0, 0],
+    padding: tourFramingPadding(map)
   });
 }
 
@@ -1410,13 +1899,17 @@ function setupPopup(map) {
         .setHTML(`
           <strong>NDVI Change, 2000–2025</strong><br>
           ${
-            change > 0
-              ? "Growth"
-              : "Decline"
-          }: ${
-            Number.isFinite(change)
-              ? change.toFixed(3)
-              : "N/A"
+            feature.properties?.still
+              ? "No measurable change"
+              : `${
+                  change > 0
+                    ? "Growth"
+                    : "Decline"
+                }: ${
+                  Number.isFinite(change)
+                    ? change.toFixed(3)
+                    : "N/A"
+                }`
           }
         `)
         .addTo(map);
@@ -1461,117 +1954,11 @@ window.addEventListener(
    Chart calculations
    ========================================================= */
 
-function featureCenter(feature) {
-  const ring =
-    feature.geometry?.coordinates?.[0];
-
-  if (!ring || !ring.length) {
-    return {
-      lon: 0,
-      lat: 0
-    };
-  }
-
-  let longitudeSum = 0;
-  let latitudeSum = 0;
-
-  ring.forEach(coordinate => {
-    longitudeSum += coordinate[0];
-    latitudeSum += coordinate[1];
-  });
-
-  return {
-    lon: longitudeSum / ring.length,
-    lat: latitudeSum / ring.length
-  };
-}
-
-function pointInBounds(
-  longitude,
-  latitude,
-  bounds
-) {
-  const [
-    longitudeMinimum,
-    longitudeMaximum,
-    latitudeMinimum,
-    latitudeMaximum
-  ] = bounds;
-
-  return (
-    longitude >= longitudeMinimum &&
-    longitude <= longitudeMaximum &&
-    latitude >= latitudeMinimum &&
-    latitude <= latitudeMaximum
-  );
-}
-
-function polygonAreaKm2(coordinates) {
-  const earthRadiusKm = 6371;
-  let area = 0;
-
-  if (
-    !coordinates ||
-    coordinates.length < 4
-  ) {
-    return 0;
-  }
-
-  for (
-    let index = 0;
-    index < coordinates.length - 1;
-    index += 1
-  ) {
-    const longitude1 =
-      coordinates[index][0] *
-      Math.PI /
-      180;
-
-    const latitude1 =
-      coordinates[index][1] *
-      Math.PI /
-      180;
-
-    const longitude2 =
-      coordinates[index + 1][0] *
-      Math.PI /
-      180;
-
-    const latitude2 =
-      coordinates[index + 1][1] *
-      Math.PI /
-      180;
-
-    area +=
-      (longitude2 - longitude1) *
-      (
-        2 +
-        Math.sin(latitude1) +
-        Math.sin(latitude2)
-      );
-  }
-
-  return Math.abs(
-    area *
-      earthRadiusKm *
-      earthRadiusKm /
-      2
-  );
-}
-
-function featureAreaKm2(feature) {
-  if (
-    !feature.geometry ||
-    feature.geometry.type !== "Polygon"
-  ) {
-    return 0;
-  }
-
-  const outerRing =
-    feature.geometry.coordinates[0];
-
-  return polygonAreaKm2(outerRing);
-}
+/*
+  Cell geometry used to be recovered from each feature's polygon ring. The grid
+  knows it directly, so featureCenter / pointInBounds / polygonAreaKm2 /
+  featureAreaKm2 are gone - see gridMeanNdvi() and gridChangeTotals().
+*/
 
 function formatArea(value) {
   if (!Number.isFinite(value)) {
@@ -1593,19 +1980,6 @@ function formatArea(value) {
   return `${value.toFixed(1)} km²`;
 }
 
-function mean(values) {
-  if (!values.length) {
-    return null;
-  }
-
-  const total = values.reduce(
-    (sum, value) => sum + value,
-    0
-  );
-
-  return total / values.length;
-}
-
 async function computeRegionChartStats(viewName) {
   const cacheKey =
     `${viewName}-medium`;
@@ -1619,105 +1993,43 @@ async function computeRegionChartStats(viewName) {
     regionBounds.global;
 
   const [
-    data2000,
-    data2013,
-    data2025,
-    changeData
+    grid2000,
+    grid2013,
+    grid2025,
+    changeGrid
   ] = await Promise.all([
-    getGeoJSON("2000", "medium"),
-    getGeoJSON("2013", "medium"),
-    getGeoJSON("2025", "medium"),
-    getChangeGeoJSON("medium")
+    loadGrid("2000", "medium"),
+    loadGrid("2013", "medium"),
+    loadGrid("2025", "medium"),
+    loadGrid(changeDataset, "medium")
   ]);
 
-  function collectMeanNDVI(data) {
-    const values = [];
+  const totals = gridChangeTotals(
+    changeGrid,
+    bounds
+  );
 
-    data.features.forEach(feature => {
-      const center =
-        featureCenter(feature);
-
-      if (
-        !pointInBounds(
-          center.lon,
-          center.lat,
-          bounds
-        )
-      ) {
-        return;
-      }
-
-      const ndvi = Number(
-        feature.properties?.ndvi
-      );
-
-      if (Number.isFinite(ndvi)) {
-        values.push(ndvi);
-      }
-    });
-
-    return mean(values);
-  }
-
-  let growthCount = 0;
-  let declineCount = 0;
-
-  let addedAreaKm2 = 0;
-  let lostAreaKm2 = 0;
-
-  changeData.features.forEach(feature => {
-    const center =
-      featureCenter(feature);
-
-    if (
-      !pointInBounds(
-        center.lon,
-        center.lat,
-        bounds
-      )
-    ) {
-      return;
-    }
-
-    const change = Number(
-      feature.properties?.change
-    );
-
-    const areaKm2 =
-      featureAreaKm2(feature);
-
-    if (change > 0) {
-      growthCount += 1;
-      addedAreaKm2 += areaKm2;
-    }
-
-    if (change < 0) {
-      declineCount += 1;
-      lostAreaKm2 += areaKm2;
-    }
-  });
-
-  const totalChange =
-    growthCount + declineCount;
+  const changedCells =
+    totals.growthCount + totals.declineCount;
 
   const stats = {
     ndvi: {
-      "2000": collectMeanNDVI(data2000),
-      "2013": collectMeanNDVI(data2013),
-      "2025": collectMeanNDVI(data2025)
+      "2000": gridMeanNdvi(grid2000, bounds),
+      "2013": gridMeanNdvi(grid2013, bounds),
+      "2025": gridMeanNdvi(grid2025, bounds)
     },
 
     change: {
-      growthPct: totalChange
-        ? growthCount / totalChange
+      growthPct: changedCells
+        ? totals.growthCount / changedCells
         : 0,
 
-      declinePct: totalChange
-        ? declineCount / totalChange
+      declinePct: changedCells
+        ? totals.declineCount / changedCells
         : 0,
 
-      addedAreaKm2,
-      lostAreaKm2
+      addedAreaKm2: totals.addedAreaKm2,
+      lostAreaKm2: totals.lostAreaKm2
     }
   };
 
@@ -1728,7 +2040,102 @@ async function computeRegionChartStats(viewName) {
 
 /* =========================================================
    Chart rendering
+
+   The four figures below are the finding - the bars beside
+   them only show that the three years are close. Until now
+   the bars tweened and the figures were rewritten between
+   frames, so half the panel moved and half of it blinked,
+   which reads as a rendering fault rather than a choice.
+
+   They count instead. The figures are already set in
+   tabular-nums, so the digits change in place without the
+   column reflowing on every frame - the panel was built for
+   this, it just was not doing it.
    ========================================================= */
+
+const FIGURE_COUNT_MS = 620;
+
+/* The stylesheet's signature curve, in a form rAF can use.
+   Hard deceleration: the number is nearly right almost at
+   once, and the last stretch is the part that reads as
+   settling on an answer. */
+
+function easeOutExpo(t) {
+  return t === 1
+    ? 1
+    : 1 - Math.pow(2, -10 * t);
+}
+
+function animateFigure(element, from, to, format) {
+  if (
+    prefersReducedMotion() ||
+    from === to ||
+    !Number.isFinite(from) ||
+    !Number.isFinite(to)
+  ) {
+    element.textContent = format(to);
+
+    return;
+  }
+
+  const startedAt =
+    performance.now();
+
+  function step(now) {
+    /* The panel is rebuilt wholesale on every region change,
+       so a frame belonging to the previous region will find
+       its element detached. Stopping on that is what keeps
+       two counts from fighting over one figure. */
+    if (!element.isConnected) {
+      return;
+    }
+
+    const progress = Math.min(
+      1,
+      (now - startedAt) / FIGURE_COUNT_MS
+    );
+
+    element.textContent = format(
+      from + (to - from) * easeOutExpo(progress)
+    );
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  element.textContent = format(from);
+
+  requestAnimationFrame(step);
+}
+
+/* Walks whatever figures the freshly written markup contains
+   and counts each from wherever the last region left it. */
+
+function playFigureCounts(root, formats) {
+  root
+    .querySelectorAll("[data-figure]")
+    .forEach(element => {
+      const key =
+        element.dataset.figure;
+
+      const to = Number(
+        element.dataset.figureValue
+      );
+
+      const from =
+        previousChartFigures[key] ?? to;
+
+      previousChartFigures[key] = to;
+
+      animateFigure(
+        element,
+        from,
+        to,
+        formats[key]
+      );
+    });
+}
 
 function renderRegionCharts(viewName, stats) {
   const chartTitle =
@@ -1756,12 +2163,9 @@ function renderRegionCharts(viewName, stats) {
     return;
   }
 
-  const title =
-    storyText[viewName]?.title ||
-    "Global Overview";
-
   chartTitle.textContent =
-    `${title} Summary`;
+    regionLabels[viewName] ||
+    regionLabels.global;
 
   const years = [
     "2000",
@@ -1845,23 +2249,30 @@ function renderRegionCharts(viewName, stats) {
 
   changeChart.innerHTML = `
     <div class="change-box growth">
-      <strong>${growthPercentage}%</strong>
+      <strong
+        data-figure="growthPct"
+        data-figure-value="${growthPercentage}"
+      >${growthPercentage}%</strong>
+
       <span>growth cells</span>
     </div>
 
     <div class="change-box decline">
-      <strong>${declinePercentage}%</strong>
+      <strong
+        data-figure="declinePct"
+        data-figure-value="${declinePercentage}"
+      >${declinePercentage}%</strong>
+
       <span>decline cells</span>
     </div>
   `;
 
   areaChart.innerHTML = `
     <div class="area-box added">
-      <strong>
-        ${formatArea(
-          stats.change.addedAreaKm2
-        )}
-      </strong>
+      <strong
+        data-figure="addedArea"
+        data-figure-value="${stats.change.addedAreaKm2}"
+      >${formatArea(stats.change.addedAreaKm2)}</strong>
 
       <span>
         estimated added green-space area
@@ -1869,17 +2280,41 @@ function renderRegionCharts(viewName, stats) {
     </div>
 
     <div class="area-box lost">
-      <strong>
-        ${formatArea(
-          stats.change.lostAreaKm2
-        )}
-      </strong>
+      <strong
+        data-figure="lostArea"
+        data-figure-value="${stats.change.lostAreaKm2}"
+      >${formatArea(stats.change.lostAreaKm2)}</strong>
 
       <span>
         estimated lost green-space area
       </span>
     </div>
   `;
+
+  /* Percentages are whole numbers on screen, so they are
+     rounded per frame rather than counting through decimals
+     nobody ever sees. formatArea() already does its own
+     rounding at each magnitude. */
+  const figureFormats = {
+    growthPct: value =>
+      `${Math.round(value)}%`,
+
+    declinePct: value =>
+      `${Math.round(value)}%`,
+
+    addedArea: formatArea,
+    lostArea: formatArea
+  };
+
+  playFigureCounts(
+    changeChart,
+    figureFormats
+  );
+
+  playFigureCounts(
+    areaChart,
+    figureFormats
+  );
 
   caption.textContent =
     "Area values are approximate and are calculated from changed MODIS NDVI grid cells in the selected region.";
@@ -1895,13 +2330,10 @@ async function updateRegionCharts(viewName) {
   const caption =
     document.querySelector("#chart-caption");
 
-  const title =
-    storyText[viewName]?.title ||
-    "Global Overview";
-
   if (chartTitle) {
     chartTitle.textContent =
-      `${title} Summary`;
+      regionLabels[viewName] ||
+      regionLabels.global;
   }
 
   if (
@@ -2136,6 +2568,17 @@ async function closeGuidedTour() {
     "mobile-chart-open"
   );
 
+  setTourFraming(singleMap);
+
+  /* Back to the staged phase so a restart enters rather than
+     appearing already settled. */
+  const card =
+    document.querySelector(".tour-card");
+
+  if (card) {
+    card.dataset.phase = "enter";
+  }
+
   document
     .querySelector("#tour-overlay")
     ?.setAttribute(
@@ -2152,12 +2595,7 @@ async function closeGuidedTour() {
 
   activeView = "global";
 
-  const regionSelect =
-    document.querySelector("#region-select");
-
-  if (regionSelect) {
-    regionSelect.value = "global";
-  }
+  syncRegionControl("global");
 
   updateStoryPanel("global");
 
@@ -2185,12 +2623,248 @@ async function closeGuidedTour() {
     views.global
   );
 
-  await loadDetailForCurrentView(
-    "global",
-    getCurrentCamera(singleMap)
-  );
+  await refreshVisibleData(true);
 
   resizeMaps();
+}
+
+/* =========================================================
+   Tour copy motion
+
+   The copy is not in a card any more, so a step change has no
+   frame moving to announce it - the words have to do that
+   themselves. Three phases on one attribute:
+
+     exit  - the outgoing copy lifts and clears, fast
+     enter - the incoming copy is staged below, blurred
+     in    - it rises, in reading order
+
+   Staging and releasing are separate phases on purpose. Set the
+   final state in the same frame as the initial one and the
+   browser coalesces them into no transition at all, so `enter`
+   is committed, a frame is allowed to pass, and only then does
+   `in` follow.
+   ========================================================= */
+
+const TOUR_EXIT_MS = 160;
+
+/*
+  While the tour is up, the globe steps aside rather than being painted
+  over. The copy sits in the left column, so the map gets left padding
+  and Mapbox re-anchors the projection to the space that is left - the
+  planet slides right and the narrative gets a column of its own.
+
+  This is the part that makes an unboxed layout work. A wash over the
+  globe can make text legible, but it does it by dimming the data, and
+  the data is the thing the sentence is describing. Moving the subject
+  costs nothing and dims nothing.
+
+  Only on viewports wide enough to have two columns; below that the copy
+  runs full-width and there is no aside to step into. Compare mode is
+  excluded because its two globes are already framed inside their own
+  halves and shifting them would push one into the divider.
+*/
+
+const TOUR_PAD_MIN_WIDTH = 900;
+const TOUR_PAD_LEFT = 400;
+
+/* The gutter this map should currently hold open, in px. Only the
+   single map ever yields one: the compare pair is already framed
+   inside its own halves, and shifting the left globe would push it
+   into the divider. */
+
+function tourFramingPadding(map) {
+  const wants =
+    map === singleMap &&
+    document.body.classList.contains("tour-open") &&
+    window.innerWidth >= TOUR_PAD_MIN_WIDTH;
+
+  return {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: wants ? TOUR_PAD_LEFT : 0
+  };
+}
+
+/* For the steps that change nothing about the camera - and for
+   opening and closing the tour, which do not fly at all - the
+   padding still has to move on its own. setPadding rather than
+   easeTo: an ease here would be cancelled by any flight still in
+   the air, which is exactly the bug this pair exists to avoid.
+   When a flight IS running it already carries the new padding, so
+   there is nothing to do. */
+
+function setTourFraming(map) {
+  /* Mid-flight the camera owns the padding, and whatever is flying
+     was given the current target when it launched. The one case
+     that needs catching is a flight launched BEFORE the tour opened
+     - the reveal's own 2.8s glide - which is still carrying left: 0
+     when step one arrives. Wait for it to land, then reframe. */
+  if (map.isMoving()) {
+    map.once("moveend", () => setTourFraming(map));
+    return;
+  }
+
+  const target = tourFramingPadding(map);
+  const current = map.getPadding?.() || {};
+
+  if (Math.round(current.left || 0) === target.left) {
+    return;
+  }
+
+  if (prefersReducedMotion()) {
+    map.setPadding(target);
+    return;
+  }
+
+  map.easeTo({
+    padding: target,
+    duration: 700
+  });
+
+  /* An eased camera only advances on rendered frames, so in a tab
+     that is not rendering - backgrounded, occluded, throttled - this
+     starts and then hangs at its first value. The gutter is what
+     keeps the copy off the globe, so it is not allowed to depend on
+     the tab being visible. Once the ease has had well past its own
+     duration to land, take the end state directly. */
+  window.setTimeout(() => {
+    const now = map.getPadding?.() || {};
+
+    /* Deliberately not conditioned on isMoving(): a stalled ease
+       reports as moving forever, which is precisely the state this
+       is here to rescue. By now the ease has had 500ms past its own
+       duration, so anything short of the target is a stall. */
+    if (Math.round(now.left || 0) !== target.left) {
+      map.setPadding(target);
+    }
+  }, 1200);
+}
+
+function tourLineDelay(index) {
+  /* Starts after the heading has begun moving and steps by less
+     than the intro's, because there are more lines here and the
+     reader is waiting on them rather than being introduced. */
+  return (0.16 + index * 0.055).toFixed(3) + "s";
+}
+
+let tourSplitWidth = 0;
+
+function splitTourText() {
+  const text =
+    document.querySelector("#tour-text");
+
+  if (!text) {
+    return;
+  }
+
+  tourSplitWidth =
+    text.getBoundingClientRect().width;
+
+  splitElementIntoLines(text, {
+    lineClass: "tour-line",
+    innerClass: "tour-line-inner",
+    delayFor: tourLineDelay
+  });
+}
+
+/* Captured lines are only correct at the width they were measured
+   at - render them narrower and each one re-wraps, orphaning its
+   last word onto a line of its own. The intro guards this the same
+   way; the tour needs it too because its copy outlives a resize.
+
+   Re-split settled, not mid-reveal: rebuilding the spans while they
+   are still rising would recreate them already in place. */
+
+function resplitTourIfWidthChanged() {
+  const card =
+    document.querySelector(".tour-card");
+
+  const text =
+    document.querySelector("#tour-text");
+
+  if (
+    !card ||
+    !text ||
+    card.dataset.phase !== "in"
+  ) {
+    return;
+  }
+
+  const width =
+    text.getBoundingClientRect().width;
+
+  if (Math.abs(width - tourSplitWidth) < 0.5) {
+    return;
+  }
+
+  splitTourText();
+
+  /* The fresh spans start staged, so release them immediately -
+     the reader is mid-step and did not ask for a replay. */
+  card.querySelectorAll(".tour-line-inner").forEach(inner => {
+    inner.style.transitionDelay = "0s";
+  });
+
+  void card.offsetHeight;
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+}
+
+/* Resolves once the outgoing copy is gone. Skipped on the first
+   step, where there is nothing to clear. */
+
+function playTourTextExit(card) {
+  if (
+    !card ||
+    card.dataset.phase === "enter"
+  ) {
+    return Promise.resolve();
+  }
+
+  card.dataset.phase = "exit";
+
+  if (prefersReducedMotion()) {
+    return Promise.resolve();
+  }
+
+  /* setTimeout rather than transitionend: a transition that never
+     starts - reduced motion, a background tab, an interrupted
+     step - never fires the event, and the copy would be stuck
+     mid-exit waiting for it. */
+  return new Promise(resolve =>
+    window.setTimeout(resolve, TOUR_EXIT_MS)
+  );
+}
+
+function playTourTextEnter(card) {
+  if (!card) {
+    return;
+  }
+
+  card.dataset.phase = "enter";
+
+  /* Measured while staged. The lines are positioned by their own
+     mask rather than by layout, so splitting here costs nothing
+     visually and the widths are already final. */
+  splitTourText();
+
+  /* Commit the staged state before releasing it. Set both in one
+     go and the browser collapses them into no transition at all.
+
+     A forced reflow rather than a rAF pair: requestAnimationFrame
+     is throttled to a stop in a background tab, and a tour left
+     mid-enter when someone switches away would still be invisible
+     when they came back. Reading a layout property flushes style
+     synchronously and cannot be deferred. */
+  void card.offsetHeight;
+
+  card.dataset.phase = "in";
 }
 
 async function showTourStep(index) {
@@ -2208,9 +2882,6 @@ async function showTourStep(index) {
   const nextButton =
     document.querySelector("#tour-next-button");
 
-  const regionSelect =
-    document.querySelector("#region-select");
-
   if (
     !step ||
     !title ||
@@ -2223,16 +2894,34 @@ async function showTourStep(index) {
 
   const previousView = activeView;
 
+  const card =
+    document.querySelector(".tour-card");
+
+  await playTourTextExit(card);
+
   title.textContent = step.title;
+
+  /* Reset the source the splitter caches, or the next split
+     would rebuild the previous step's sentence. */
+  delete text.dataset.sourceText;
   text.textContent = step.text;
 
   count.textContent =
     `Step ${index + 1} of ${tourSteps.length}`;
 
-  nextButton.textContent =
-    index === tourSteps.length - 1
-      ? "Finish"
-      : "Next";
+  nextButton
+    .querySelectorAll(".start-button-label")
+    .forEach(label => {
+      label.textContent =
+        index === tourSteps.length - 1
+          ? "Finish"
+          : "Next";
+    });
+
+  /* Not awaited. The camera below takes 2.8s and the copy has
+     nothing to learn from it - making the words wait on the
+     flight would leave the corner empty for most of the step. */
+  playTourTextEnter(card);
 
   if (step.view) {
     activeView = step.view;
@@ -2241,9 +2930,7 @@ async function showTourStep(index) {
 
     await updateRegionCharts(step.view);
 
-    if (regionSelect) {
-      regionSelect.value = step.view;
-    }
+    syncRegionControl(step.view);
   }
 
   if (
@@ -2267,6 +2954,8 @@ async function showTourStep(index) {
 
     await setMode(step.mode);
   }
+
+  setTourFraming(singleMap);
 
   if (step.openChart) {
     document.body.classList.add(
@@ -2390,6 +3079,9 @@ function closeTakeawayPanel() {
    Splash screen
    ========================================================= */
 
+/* Stage 0 shows the title, stage 1 adds the detail and legend,
+   stage 2 grows the decorative globe and hands off to the tour. */
+
 function updateSplashStatus(message) {
   const status =
     document.querySelector("#loading-status");
@@ -2399,7 +3091,21 @@ function updateSplashStatus(message) {
   }
 }
 
-function enableStartButton() {
+/* The button stacks two faces for the hover inversion, so both
+   copies of the label have to say the same thing. */
+
+function setSplashCtaLabel(text) {
+  const labels =
+    document.querySelectorAll(
+      "#start-button .start-button-label"
+    );
+
+  labels.forEach(label => {
+    label.textContent = text;
+  });
+}
+
+function refreshSplashCta() {
   const button =
     document.querySelector("#start-button");
 
@@ -2407,9 +3113,286 @@ function enableStartButton() {
     return;
   }
 
-  button.disabled = false;
-  button.textContent =
-    "Start Exploring";
+  if (splashStage === 0) {
+    button.disabled = false;
+
+    setSplashCtaLabel("Start the tour");
+
+    if (appReady) {
+      updateSplashStatus("");
+    }
+
+    return;
+  }
+
+  /* From stage 1 the CTA carries its own state: the label says
+     what the next click does, and the spinner inside the button
+     covers the not-yet-ready case, so the status line under it
+     goes away. It stays in the DOM as a live region — CSS takes
+     it out of the layout, not out of the accessibility tree. */
+
+  button.disabled = !appReady;
+
+  setSplashCtaLabel("Reveal the globe");
+
+  updateSplashStatus(
+    appReady
+      ? "Ready"
+      : "Preparing the globe..."
+  );
+}
+
+/* The stand-in globe steps aside as soon as the real map has
+   something to show behind the blur. */
+
+function enableStartButton() {
+  const splash =
+    document.querySelector("#splash-screen");
+
+  if (splash) {
+    splash.dataset.mapReady = "true";
+  }
+
+  refreshSplashCta();
+}
+
+function setSplashStage(stage) {
+  const splash =
+    document.querySelector("#splash-screen");
+
+  if (!splash) {
+    return;
+  }
+
+  /* Stage 1 is the moment the copy becomes visible, so make sure
+     the lines match the current width before revealing them. This
+     runs before the stage flips, so rebuilt lines start below
+     their masks and still rise into place rather than appearing
+     already settled. It is the synchronous backstop for the
+     ResizeObserver, which cannot fire while the tab is hidden. */
+
+  if (stage === 1) {
+    resplitIfWidthChanged();
+  }
+
+  splashStage = stage;
+  splash.dataset.stage = String(stage);
+
+  refreshSplashCta();
+}
+
+function pause(milliseconds) {
+  return new Promise(resolve => {
+    window.setTimeout(
+      resolve,
+      prefersReducedMotion() ? 0 : milliseconds
+    );
+  });
+}
+
+function prefersReducedMotion() {
+  return window
+    .matchMedia("(prefers-reduced-motion: reduce)")
+    .matches;
+}
+
+/* Rewrap the intro paragraph one rendered line per element, so
+   each line can slide up out of its own mask. Where the browser
+   breaks a line is only knowable after layout, so this measures
+   the words rather than guessing: every word goes in its own
+   span, and a change in a span's top edge means a new line.
+
+   Runs once fonts are ready - measuring against the fallback
+   face would break the lines in the wrong places - and again on
+   resize, since a new width means new break points. */
+
+/*
+  Rewrap a paragraph one rendered line per span, so each line can move
+  independently - out of its own mask, on its own delay - instead of the
+  whole block fading as a slab.
+
+  The measurement is the point: there is no way to know where a line
+  breaks without laying the text out first, so every word goes in as a
+  probe, the probes are grouped by their top offset, and the paragraph is
+  rebuilt from those groups. Whatever the browser decided is what gets
+  captured.
+
+  Shared by the intro and the guided tour. They differ only in class
+  names and in how a line index becomes a delay, so those are arguments.
+*/
+
+function splitElementIntoLines(paragraph, options) {
+  const {
+    lineClass,
+    innerClass,
+    delayFor,
+    startIndex = 0
+  } = options;
+
+  const source =
+    paragraph.dataset.sourceText ||
+    paragraph.textContent;
+
+  paragraph.dataset.sourceText = source;
+
+  /* Split on ordinary whitespace only: a non-breaking space is
+     there to hold a phrase together, so it has to stay inside
+     its token rather than becoming a break opportunity. */
+  const words = source
+    .trim()
+    .split(/[^\S\u00a0]+/);
+
+  paragraph.textContent = "";
+
+  /* text-wrap: pretty balances the whole paragraph rather than
+     filling each line greedily, so probing under it can break a
+     line early - stranding a word like "increased" alone - to
+     improve a wrap elsewhere in the block. The per-line spans
+     built below already force text-wrap: wrap for display, so
+     the measurement pass needs the same greedy mode or the two
+     disagree about where lines break. */
+  paragraph.style.textWrap = "wrap";
+
+  const probes = words.map((word, index) => {
+    const probe = document.createElement("span");
+
+    probe.textContent =
+      index === 0 ? word : " " + word;
+
+    paragraph.appendChild(probe);
+
+    return probe;
+  });
+
+  const lines = [];
+  let lineTop = null;
+
+  probes.forEach(probe => {
+    const top = probe.getBoundingClientRect().top;
+
+    if (
+      lineTop === null ||
+      Math.abs(top - lineTop) > 1
+    ) {
+      lineTop = top;
+      lines.push([]);
+    }
+
+    lines[lines.length - 1].push(probe.textContent);
+  });
+
+  paragraph.textContent = "";
+
+  lines.forEach((parts, index) => {
+    const line = document.createElement("span");
+    const inner = document.createElement("span");
+
+    line.className = lineClass;
+    inner.className = innerClass;
+    inner.textContent = parts.join("").trim();
+
+    inner.style.transitionDelay =
+      delayFor(startIndex + index);
+
+    line.appendChild(inner);
+    paragraph.appendChild(line);
+  });
+
+  return lines.length;
+}
+
+function splitDetailIntoLines() {
+  const paragraphs =
+    document.querySelectorAll(".splash-detail-text");
+
+  if (!paragraphs.length) {
+    return;
+  }
+
+  /* The stagger runs across the whole passage rather than
+     restarting per paragraph, so the copy reads as one thought
+     arriving in order. */
+  let lineNumber = 0;
+
+  splitWidth =
+    paragraphs[0].getBoundingClientRect().width;
+
+  paragraphs.forEach(paragraph => {
+    lineNumber += splitElementIntoLines(paragraph, {
+      lineClass: "splash-line",
+      innerClass: "splash-line-inner",
+      startIndex: lineNumber,
+      delayFor: index =>
+        (0.12 + index * 0.065).toFixed(3) + "s"
+    });
+  });
+}
+
+let splitTimer = 0;
+let splitWidth = 0;
+
+/* The captured lines are only right for the width they were
+   measured at - render them narrower and each one re-wraps,
+   orphaning its last word or two onto a line of its own. Re-split
+   whenever that width has actually moved, and only then:
+   rebuilding mid-reveal would recreate the elements in their
+   settled state and make them pop instead of rise. */
+
+function resplitIfWidthChanged() {
+  const paragraph =
+    document.querySelector(".splash-detail-text");
+
+  if (!paragraph) {
+    return;
+  }
+
+  const width =
+    paragraph.getBoundingClientRect().width;
+
+  if (Math.abs(width - splitWidth) < 0.5) {
+    return;
+  }
+
+  splitDetailIntoLines();
+}
+
+function scheduleLineSplit() {
+  window.clearTimeout(splitTimer);
+
+  splitTimer = window.setTimeout(
+    () => {
+      resplitIfWidthChanged();
+      resplitTourIfWidthChanged();
+    },
+    150
+  );
+}
+
+/* A window resize is not the only thing that changes the measure -
+   a scrollbar appearing, a font swapping in, or a zoom change all
+   do too, and none of them fire "resize". */
+
+function watchDetailWidth() {
+  if (typeof ResizeObserver === "undefined") {
+    return;
+  }
+
+  const observer =
+    new ResizeObserver(scheduleLineSplit);
+
+  const paragraph =
+    document.querySelector(".splash-detail-text");
+
+  if (paragraph) {
+    observer.observe(paragraph);
+  }
+
+  const tourText =
+    document.querySelector("#tour-text");
+
+  if (tourText) {
+    observer.observe(tourText);
+  }
 }
 
 function setupSplashScreen() {
@@ -2423,23 +3406,58 @@ function setupSplashScreen() {
     return;
   }
 
-  button.disabled = true;
-  button.textContent =
-    "Loading Map...";
+  setSplashStage(0);
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(splitDetailIntoLines);
+  } else {
+    splitDetailIntoLines();
+  }
+
+  watchDetailWidth();
+
+  window.addEventListener(
+    "resize",
+    scheduleLineSplit
+  );
 
   button.addEventListener("click", () => {
-    if (!appReady) {
+    if (splashStage === 0) {
+      setSplashStage(1);
       return;
     }
 
-    splash.classList.add("hidden");
-
-    window.setTimeout(() => {
-      splash.remove();
-      resizeMaps();
-      openGuidedTour();
-    }, 600);
+    if (
+      splashStage === 1 &&
+      appReady
+    ) {
+      revealMapAndStartTour(splash);
+    }
   });
+}
+
+async function revealMapAndStartTour(splash) {
+  setSplashStage(2);
+
+  /* The decorative globe grows and sharpens first, so the real
+     one behind it lands in roughly the same place. */
+  await pause(900);
+
+  resizeMaps();
+
+  splash.classList.add("hidden");
+
+  await pause(750);
+
+  window.removeEventListener(
+    "resize",
+    scheduleLineSplit
+  );
+
+  splash.remove();
+  resizeMaps();
+
+  await openGuidedTour();
 }
 
 /* =========================================================

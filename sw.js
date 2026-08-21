@@ -1,4 +1,17 @@
-const CACHE_NAME = "greening-earth-data-v1";
+/* Bumped for the binary grid format - the old cache holds stale GeoJSON. */
+const CACHE_NAME = "greening-earth-data-v2";
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(
+        names
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      )
+    )
+  );
+});
 
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
