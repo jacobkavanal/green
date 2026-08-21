@@ -30,6 +30,11 @@ const NDVI_SCALE = 10000;
 const BLOCK_PAD = 0.001;
 const CHANGE_CELL_SCALE = 0.55;
 
+/* The endpoint years of the precomputed change grid - CHANGE_PAIRS in
+   build_actual_ndvi_spikes.py. buildChangeFeatures() reads both to find the
+   land the change grid leaves out. */
+const CHANGE_YEARS = ["2000", "2025"];
+
 /* Built collections are cached by feature count rather than by entry count,
    since a high-detail globe holds five times what a low-detail one does.
 
@@ -177,7 +182,17 @@ function buildYearFeatures(grid) {
   return features;
 }
 
-function buildChangeFeatures(grid) {
+/*
+  Change cells, plus the cells that did not change.
+
+  build_actual_ndvi_spikes.py drops any block whose change falls below
+  CHANGE_THRESHOLD, so steady land is simply absent from the change grid -
+  indistinguishable, in the file, from ocean. The year grids still cover it,
+  though, so a cell both year grids hold and the change grid does not is land
+  that held steady. Those come back here carrying `still`, which
+  getChangePaint() draws as a low grey block rather than a spike.
+*/
+function buildChangeFeatures(grid, oldGrid, newGrid) {
   const features = [];
 
   const halfLon =
@@ -185,6 +200,14 @@ function buildChangeFeatures(grid) {
 
   const halfLat =
     (grid.cellLat / 2) * CHANGE_CELL_SCALE;
+
+  /* All three datasets share one lattice at a given detail level, which is
+     what makes a cell index mean the same thing in each of them. */
+  const stillCells =
+    oldGrid.cols === grid.cols &&
+    oldGrid.rows === grid.rows &&
+    newGrid.cols === grid.cols &&
+    newGrid.rows === grid.rows;
 
   for (let row = 0; row < grid.rows; row += 1) {
     const centerLat =
@@ -196,9 +219,25 @@ function buildChangeFeatures(grid) {
     const rowOffset = row * grid.cols;
 
     for (let col = 0; col < grid.cols; col += 1) {
-      const raw = grid.values[rowOffset + col];
+      const index = rowOffset + col;
+      const raw = grid.values[index];
 
-      if (raw === GRID_NODATA) {
+      let properties;
+
+      if (raw !== GRID_NODATA) {
+        properties = {
+          change: raw / NDVI_SCALE
+        };
+      } else if (
+        stillCells &&
+        oldGrid.values[index] !== GRID_NODATA &&
+        newGrid.values[index] !== GRID_NODATA
+      ) {
+        properties = {
+          change: 0,
+          still: 1
+        };
+      } else {
         continue;
       }
 
@@ -211,9 +250,7 @@ function buildChangeFeatures(grid) {
       features.push({
         type: "Feature",
 
-        properties: {
-          change: raw / NDVI_SCALE
-        },
+        properties,
 
         geometry: {
           type: "Polygon",
@@ -392,12 +429,32 @@ async function globeCollection(dataset, detail) {
     return cached;
   }
 
-  const grid = await loadGrid(dataset, detail);
+  let features;
 
-  const features =
-    dataset === "change"
-      ? buildChangeFeatures(grid)
-      : buildYearFeatures(grid);
+  if (dataset === "change") {
+    /* The change grid alone cannot tell steady land from ocean, so the two
+       endpoint years are loaded with it. They are cached and usually already
+       resident, so this costs a cache hit rather than a fetch. */
+    const [
+      grid,
+      oldGrid,
+      newGrid
+    ] = await Promise.all([
+      loadGrid(dataset, detail),
+      loadGrid(CHANGE_YEARS[0], detail),
+      loadGrid(CHANGE_YEARS[1], detail)
+    ]);
+
+    features = buildChangeFeatures(
+      grid,
+      oldGrid,
+      newGrid
+    );
+  } else {
+    const grid = await loadGrid(dataset, detail);
+
+    features = buildYearFeatures(grid);
+  }
 
   const collection = {
     type: "FeatureCollection",

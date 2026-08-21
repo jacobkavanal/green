@@ -60,7 +60,7 @@ The conversion is faithful to within quantization: coordinates match to 5e-7°, 
 Loaded before `main.js`; plain script, no modules. Owns everything about the NDVI cell grid, behind two seams:
 
 - `loadGrid(dataset, detail)` — fetches and decodes a `.grid` into `{cols, rows, originLon, originLat, cellLon, cellLat, p05, p95, values}` where `values` is an `Int16Array` view over the file buffer. Caches the *promise*, keyed by `dataset-detail`, so concurrent callers share one fetch. `dataset` is `"2000"` / `"2013"` / `"2025"` / `"change"`; paths come from the manifest, never hardcoded.
-- `globeCollection(dataset, detail)` — builds a Mapbox-ready `FeatureCollection` for the whole planet, cached.
+- `globeCollection(dataset, detail)` — builds a Mapbox-ready `FeatureCollection` for the whole planet, cached. `"change"` is the one dataset that reads more than its own grid: `build_actual_ndvi_spikes.py` drops any block under `CHANGE_THRESHOLD`, so steady land is missing from the change grid and indistinguishable there from ocean. `buildChangeFeatures()` loads the two `CHANGE_YEARS` grids alongside it and re-emits every cell both years cover but the change grid does not, tagged `still: 1`. That roughly doubles the change collection (91,847 extra features at high detail).
 
 **Materialization is whole-globe on purpose, and this is measured, not assumed.** Building every feature on Earth at the finest detail — 195,125 of them — takes about **12 ms**. Handing that collection to Mapbox via `setData()` costs orders of magnitude more, because `setData` reprocesses the *entire* source every call.
 
@@ -78,7 +78,7 @@ One ~2400-line file of top-level `const`s, module-level mutable state, and `setu
 
 Three Mapbox maps exist simultaneously and are never destroyed: `singleMap` (present + change modes) and `leftMap`/`rightMap` (compare mode). CSS shows and hides them via a `mode-present` / `mode-compare` / `mode-change` class on `<body>`; `setMode()` sets that class and repositions cameras. Compare maps are given `emptyGeoJSON` when not in use — `clearCompareMaps()` does this, and it matters for memory.
 
-Layers: `spikes-layer` (source `spikes`) on all three maps for NDVI intensity; `change-spikes-layer` (source `change-spikes`) on `singleMap` only. Both are `fill-extrusion`, colored and sized by data-driven expressions in `getSpikePaint()` / `getChangePaint()`, which read `greenness`/`height` and `change` — the properties `grid.js` synthesizes.
+Layers: `spikes-layer` (source `spikes`) on all three maps for NDVI intensity; `change-spikes-layer` (source `change-spikes`) on `singleMap` only. Both are `fill-extrusion`, colored and sized by data-driven expressions in `getSpikePaint()` / `getChangePaint()`, which read `greenness`/`height` and `change`/`still` — the properties `grid.js` synthesizes. `still` cells are drawn as flat grey plates at `STILL_HEIGHT`, held below the shortest real change spike (`CHANGE_THRESHOLD * 320000` = 8,000 m) so no-change can never read as small change.
 
 State lives in module-level `let`s near the top: `currentMode`, `activeView`, `compareBaseYear`, `activeDetail`, and `activeDataSignature` (a `"dataset(s)@detail"` string per mode — e.g. `"2000+2025@medium"` — which is what makes a redundant refresh cheap to detect).
 
